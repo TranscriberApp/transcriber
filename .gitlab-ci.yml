@@ -1,6 +1,6 @@
 image: python:3.8-slim
 variables:
-  APP_NAME: ${CI_PROJECT_NAME}
+  APP_NAME: dl-transcript-backend
   LISTENER_APP_NAME: listener-app
   NAMESPACE_DEV:  jitsi
   DEV_TAG: dev
@@ -56,6 +56,7 @@ build_docker_dev_listener:
 deploy_dev:
   <<: *deploy_definition
   variables:
+    ENVIRONMENT: dev
     APP_NAME: ${APP_NAME}
     OPENSHIFT_SERVER: ${OPENSHIFT_SERVER_PROD}
     TOKEN: ${OPENSHIFT_TOKEN}
