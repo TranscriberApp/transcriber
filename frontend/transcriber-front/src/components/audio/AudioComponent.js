@@ -1,5 +1,5 @@
 import React from "react";
-import {connectionService} from '../../services/ConnectionService'
+import {rtcConnectionService} from '../../services/RTCConnectionService'
 
 export class AudioComponent extends React.Component {
     constructor(props) {
@@ -12,7 +12,7 @@ export class AudioComponent extends React.Component {
         this.toggleMicrophone = this.toggleMicrophone.bind(this);
         this.turnOnMicrophone = this.turnOnMicrophone.bind(this);
         this.turnOffMicrophone = this.turnOffMicrophone.bind(this);
-        connectionService.rtcConnection.ontrack = event => {
+        rtcConnectionService.rtcConnection.ontrack = event => {
             this.setState({audioSource: event.source});
         };
     }
@@ -22,7 +22,7 @@ export class AudioComponent extends React.Component {
             audio: true,
             video: false
         });
-        audio.getTracks().forEach(track => connectionService.rtcConnection.addTrack(track, audio));
+        audio.getTracks().forEach(track => rtcConnectionService.rtcConnection.addTrack(track, audio));
         this.setState({audio});
     }
 

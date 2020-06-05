@@ -3,6 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import './components/audio/AudioComponent'
 import {AudioComponent} from "./components/audio/AudioComponent";
+import {rtcConnectionService} from "./services/RTCConnectionService";
 
 function App() {
 
@@ -13,6 +14,9 @@ function App() {
         <p>
           Hello!
         </p>
+          <button onClick={rtcConnectionService.initConnection}>
+              Init connection
+          </button>
         <AudioComponent />
       </header>
     </div>
