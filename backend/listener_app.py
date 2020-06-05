@@ -26,6 +26,9 @@ def callback_ogg(ch, method, properties, body):
         "time": str(datetime.datetime.now()),
         "transcript": translation
     })
+    print(ch)
+    print(method)
+    print(properties)
     print(result)
     conn.produce('results', result)
 
@@ -40,18 +43,18 @@ def callback_wav(ch, method, properties, body):
     conn.produce('results', result)
 
 
-def listen_to_ogg():
+def listen_to_ogg(app):
     print('Listening for OGG messages')
-    conn.listen('hello-ogg', callback_ogg)
+    ogg_conn = Connecter()
+    ogg_conn.init_app(app)
+    ogg_conn.listen('hello-ogg', callback_ogg)
 
 
-def listen_to_wav():
+def listen_to_wav(app):
     print('Listening for WAV messages')
-    conn.listen('hello-wav', callback_wav)
-
-
-ogg_thread = Thread(target=listen_to_ogg, daemon=True)
-wav_thread = Thread(target=listen_to_wav, daemon=True)
+    wav_conn = Connecter()
+    wav_conn.init_app(app)
+    wav_conn.listen('hello-wav', callback_wav)
 
 
 def create_app():
@@ -65,13 +68,16 @@ def create_app():
 
     # Init the deep learning model
     deep_learning_model.init_app(app)
-
-    ogg_thread.start()
-    wav_thread.start()
     return app
 
 
 app = create_app()
+
+ogg_thread = Thread(target=listen_to_ogg, args=(app,), daemon=True)
+wav_thread = Thread(target=listen_to_wav, args=(app,), daemon=True)
+
+ogg_thread.start()
+wav_thread.start()
 
 
 @app.route("/")

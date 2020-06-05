@@ -57,7 +57,6 @@ deploy_dev:
   <<: *deploy_definition
   variables:
     APP_NAME: ${APP_NAME}
-    CI_REGISTRY_IMAGE: ${CI_REGISTRY_IMAGE}
     OPENSHIFT_SERVER: ${OPENSHIFT_SERVER_PROD}
     TOKEN: ${OPENSHIFT_TOKEN}
     NAMESPACE: ${NAMESPACE_DEV}
