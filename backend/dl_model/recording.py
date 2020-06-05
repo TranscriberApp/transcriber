@@ -20,17 +20,8 @@ fs = 44100  # Sample rate
 seconds = 5  # Duration of recording
 
 
-def downsample_wav(src, inrate=44100, outrate=16000, inchannels=2, outchannels=1):
-    if not os.path.exists(src):
-        print('Source not found!')
-        return False
-
-    try:
-        s_read = wave.open(src, 'r')
-    except:
-        print('Failed to open files!')
-        return False
-
+def downsample_wav(s_read, inrate=44100, outrate=16000, inchannels=2, outchannels=1):
+    
     n_frames = s_read.getnframes()
     data = s_read.readframes(n_frames)
 
@@ -41,20 +32,11 @@ def downsample_wav(src, inrate=44100, outrate=16000, inchannels=2, outchannels=1
     except:
         print('Failed to downsample wav')
         return False
-
     try:
         return outrate, np.frombuffer(converted, np.int16)
     except:
         print('Failed to write wav')
         return False
-
-    try:
-        s_read.close()
-        # s_write.close()
-    except:
-        print('Failed to close wav files')
-        return False
-
     return True
 
 
