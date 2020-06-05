@@ -22,15 +22,18 @@ class Connecter:
         self.channel = self.connection.channel()
 
     def define_queue(self, queue_name):
-        self.channel.queue_declare(queue=queue_name)
+        channel = self.connection.channel()
+        channel.queue_declare(queue=queue_name)
 
     def listen(self, queue, callback):
 
         self.channel.basic_consume(queue=queue,
                                    auto_ack=True,
                                    on_message_callback=callback)
-        logging.info(f' [*] Waiting for messages on {queue}. To exit press CTRL+C')
+        logging.info(
+            f' [*] Waiting for messages on {queue}. To exit press CTRL+C')
         self.channel.start_consuming()
 
     def produce(self, queue, message):
-        self.channel.basic_publish('', routing_key=queue, body=message)
+        channel = self.connection.channel()
+        channel.basic_publish('', routing_key=queue, body=message)
