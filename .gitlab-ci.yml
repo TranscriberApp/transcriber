@@ -1,6 +1,7 @@
 image: python:3.8-slim
 variables:
   APP_NAME: ${CI_PROJECT_NAME}
+  LISTENER_APP_NAME: listener-app
   NAMESPACE_DEV:  jitsi
   DEV_TAG: dev
   DEV_LISTENER_TAG: devrmq
@@ -55,7 +56,8 @@ build_docker_dev_listener:
 deploy_dev:
   <<: *deploy_definition
   variables:
-    ENVIRONMENT: dev
+    APP_NAME: ${APP_NAME}
+    CI_REGISTRY_IMAGE: ${CI_REGISTRY_IMAGE}
     OPENSHIFT_SERVER: ${OPENSHIFT_SERVER_PROD}
     TOKEN: ${OPENSHIFT_TOKEN}
     NAMESPACE: ${NAMESPACE_DEV}
@@ -68,6 +70,7 @@ deploy_dev_listener:
   <<: *deploy_definition
   variables:
     ENVIRONMENT: dev
+    APP_NAME: ${LISTENER_APP_NAME}
     OPENSHIFT_SERVER: ${OPENSHIFT_SERVER_PROD}
     TOKEN: ${OPENSHIFT_TOKEN}
     NAMESPACE: ${NAMESPACE_DEV}
