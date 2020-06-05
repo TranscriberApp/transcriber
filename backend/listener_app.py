@@ -34,7 +34,7 @@ def callback_ogg(ch, method, properties, body):
     print(ch)
     print(method)
     print(properties)
-    logging.info(result)
+    logging.info(str(result, encoding='utf-8'))
     conn.produce('results', result)
 
 
@@ -44,7 +44,7 @@ def callback_wav(ch, method, properties, body):
         "time": str(datetime.datetime.now()),
         "transcript": translation
     })
-    logging.info(result)
+    logging.info(str(result, encoding='utf-8'))
     conn.produce('results', result)
 
 

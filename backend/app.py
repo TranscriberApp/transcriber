@@ -105,7 +105,7 @@ def shutdown():
 
 
 def callback_results(ch, method, properties, body):
-    logging.info(body)
+    logging.info(str(body, encoding='utf-8'))
 
 
 def results_thread(app):

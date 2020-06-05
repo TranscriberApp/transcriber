@@ -36,7 +36,7 @@ def convert_samplerate(audio_path, desired_sample_rate):
 
 def load_scorer(ds, scorer):
     logging.info('Loading scorer from files {}'.format(
-        scorer), file=sys.stderr)
+        scorer))
     ds.enableExternalScorer(scorer)
 
 
@@ -44,8 +44,8 @@ def sample_audio(audiofile: str, desired_sample_rate):
     fin = wave.open(audiofile, 'rb')
     fs_orig = fin.getframerate()
     if fs_orig != desired_sample_rate:
-        logging.info('Warning: original sample rate ({}) is different than {}hz. Resampling might produce erratic speech recognition.'.format(
-            fs_orig, desired_sample_rate), file=sys.stderr)
+        logging.warning('Warning: original sample rate ({}) is different than {}hz. Resampling might produce erratic speech recognition.'.format(
+            fs_orig, desired_sample_rate))
         fs_new, audio = convert_samplerate(audiofile, desired_sample_rate)
     else:
         audio = np.frombuffer(fin.readframes(fin.getnframes()), np.int16)
@@ -68,7 +68,7 @@ class DeepLearnModel:
 
     def _load_scorer(self, scorer):
         logging.info('Loading scorer from files {}'.format(
-            scorer), file=sys.stderr)
+            scorer))
         self.model.enableExternalScorer(scorer)
 
     def infer(self, audio_sample):
