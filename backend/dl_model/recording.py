@@ -14,24 +14,48 @@ from deepspeech import Model
 import argparse
 import pathlib
 import logging
+import audioop
 
 fs = 44100  # Sample rate
 seconds = 5  # Duration of recording
 
 
-def convert_samplerate(audio_path, desired_sample_rate):
-    sox_cmd = 'sox {} --type raw --bits 16 --channels 1 --rate {} --encoding signed-integer --endian little --compression 0.0 --no-dither - '.format(
-        quote(audio_path), desired_sample_rate)
-    try:
-        output = subprocess.check_output(
-            shlex.split(sox_cmd), stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError('SoX returned non-zero status: {}'.format(e.stderr))
-    except OSError as e:
-        raise OSError(e.errno, 'SoX not found, use {}hz files or install it: {}'.format(
-            desired_sample_rate, e.strerror))
+def downsample_wav(src, inrate=44100, outrate=16000, inchannels=2, outchannels=1):
+    if not os.path.exists(src):
+        print('Source not found!')
+        return False
 
-    return desired_sample_rate, np.frombuffer(output, np.int16)
+    try:
+        s_read = wave.open(src, 'r')
+    except:
+        print('Failed to open files!')
+        return False
+
+    n_frames = s_read.getnframes()
+    data = s_read.readframes(n_frames)
+
+    try:
+        converted = audioop.ratecv(data, 2, inchannels, inrate, outrate, None)
+        if outchannels == 1:
+            converted = audioop.tomono(converted[0], 2, 1, 0)
+    except:
+        print('Failed to downsample wav')
+        return False
+
+    try:
+        return outrate, np.frombuffer(converted, np.int16)
+    except:
+        print('Failed to write wav')
+        return False
+
+    try:
+        s_read.close()
+        # s_write.close()
+    except:
+        print('Failed to close wav files')
+        return False
+
+    return True
 
 
 def load_scorer(ds, scorer):
@@ -46,7 +70,7 @@ def sample_audio(audiofile: str, desired_sample_rate):
     if fs_orig != desired_sample_rate:
         logging.warning('Warning: original sample rate ({}) is different than {}hz. Resampling might produce erratic speech recognition.'.format(
             fs_orig, desired_sample_rate))
-        fs_new, audio = convert_samplerate(audiofile, desired_sample_rate)
+        fs_new, audio = downsample_wav(fin, outrate=desired_sample_rate)
     else:
         audio = np.frombuffer(fin.readframes(fin.getnframes()), np.int16)
 
