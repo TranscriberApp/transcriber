@@ -19,4 +19,4 @@ class RTCConnectionService {
 }
 
 
-export let rtcConnectionService = new RTCConnectionService("ws://192.168.0.1");
+export let rtcConnectionService = new RTCConnectionService();
