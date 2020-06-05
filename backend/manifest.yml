@@ -2,4 +2,5 @@
 applications:
  - name: transcriber
    random-route: true
-   memory: 128M
+   buildpack: https://github.com/cloudfoundry/multi-buildpack
+   memory: 1.7G

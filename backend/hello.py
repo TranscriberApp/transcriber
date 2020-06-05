@@ -1,10 +1,21 @@
 from cloudant import Cloudant
 from flask import Flask, render_template, request, jsonify
+# from werkzeug import secure_filename
 import atexit
 import os
 import json
+from dl_model.recording import dl
+from dl_model.ogg_to_wav import convert
+import pathlib
+import wave
 
 app = Flask(__name__, static_url_path='')
+
+app.config.from_object("config.Config")
+
+# Init the deep learning model
+dl.init_app(app)
+
 
 db_name = 'mydb'
 client = None
@@ -21,7 +32,8 @@ if 'VCAP_SERVICES' in os.environ:
         client = Cloudant(user, password, url=url, connect=True)
         db = client.create_database(db_name, throw_on_exists=False)
 elif "CLOUDANT_URL" in os.environ:
-    client = Cloudant(os.environ['CLOUDANT_USERNAME'], os.environ['CLOUDANT_PASSWORD'], url=os.environ['CLOUDANT_URL'], connect=True)
+    client = Cloudant(os.environ['CLOUDANT_USERNAME'], os.environ['CLOUDANT_PASSWORD'],
+                      url=os.environ['CLOUDANT_URL'], connect=True)
     db = client.create_database(db_name, throw_on_exists=False)
 elif os.path.isfile('vcap-local.json'):
     with open('vcap-local.json') as f:
@@ -38,6 +50,7 @@ elif os.path.isfile('vcap-local.json'):
 # When running this app on the local machine, default the port to 8000
 port = int(os.getenv('PORT', 8000))
 
+
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
@@ -48,6 +61,8 @@ def root():
 # *     "name": "Bob"
 # * }
 # */
+
+
 @app.route('/api/visitors', methods=['GET'])
 def get_visitor():
     if client:
@@ -67,10 +82,12 @@ def get_visitor():
 #  * [ "Bob", "Jane" ]
 #  * @return An array of all the visitor names
 #  */
+
+
 @app.route('/api/visitors', methods=['POST'])
 def put_visitor():
     user = request.json['name']
-    data = {'name':user}
+    data = {'name': user}
     if client:
         my_document = db.create_document(data)
         data['_id'] = my_document['_id']
@@ -79,10 +96,28 @@ def put_visitor():
         print('No database')
         return jsonify(data)
 
+
+@app.route('/upload')
+def upload():
+    return render_template('upload.html')
+
+
+@app.route('/uploader', methods=['GET', 'POST'])
+def uploader():
+    if request.method == 'POST':
+        f = request.files['file']
+        sample = f
+        extension = f.filename.split(".")[1]
+        if extension == "ogg":
+            sample = convert(f)
+        return jsonify({"message": dl.infer(sample)})
+
+
 @atexit.register
 def shutdown():
     if client:
         client.disconnect()
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=True)
