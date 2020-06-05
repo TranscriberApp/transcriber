@@ -1,16 +1,20 @@
 import React from "react";
+import {connectionService} from '../../services/ConnectionService'
 
 export class AudioComponent extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             audio: null,
+            audioSource: null,
         };
 
-        this.rtcConnection = new RTCPeerConnection();
         this.toggleMicrophone = this.toggleMicrophone.bind(this);
         this.turnOnMicrophone = this.turnOnMicrophone.bind(this);
         this.turnOffMicrophone = this.turnOffMicrophone.bind(this);
+        connectionService.rtcConnection.ontrack = event => {
+            this.setState({audioSource: event.source});
+        };
     }
 
     async turnOnMicrophone() {
@@ -18,16 +22,13 @@ export class AudioComponent extends React.Component {
             audio: true,
             video: false
         });
-        this.rtcConnection.addStream(audio)
-        audio.getTracks().forEach(track => this.rtcConnection.addTrack(track, audio));
-
+        audio.getTracks().forEach(track => connectionService.rtcConnection.addTrack(track, audio));
         this.setState({audio});
     }
 
     turnOffMicrophone() {
         this.state.audio.getTracks().forEach(track => track.stop());
-        this.state.recorder.stop();
-        this.setState({audio: null, recorder: null, recordedData: null});
+        this.setState({audio: null});
     }
 
     toggleMicrophone() {
@@ -44,6 +45,7 @@ export class AudioComponent extends React.Component {
                 <button onClick={this.toggleMicrophone}>
                     {this.state.audio ? 'Turn off microphone' : 'Turn on microphone'}
                 </button>
+                {this.state.audioSource && <audio controls src={this.state.audioSource}/>}
             </div>
         );
     }
