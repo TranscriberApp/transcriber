@@ -9,4 +9,5 @@ WORKDIR /app
 
 RUN pip install -r requirements.txt
 
-RUN ["gunicorn", "--timeout", "280", "hello:app"]
+EXPOSE 8000
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "280", "hello:app"]
