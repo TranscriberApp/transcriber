@@ -1,0 +1,5 @@
+---
+applications:
+ - name: transcriber
+   random-route: true
+   memory: 128M
