@@ -9,6 +9,11 @@ from backend.dl_model.ogg_to_wav import convert
 from io import BytesIO
 import json
 import datetime
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
+
 
 load_dotenv()
 conn = Connecter()
@@ -29,7 +34,7 @@ def callback_ogg(ch, method, properties, body):
     print(ch)
     print(method)
     print(properties)
-    print(result)
+    logging.info(result)
     conn.produce('results', result)
 
 
@@ -39,19 +44,19 @@ def callback_wav(ch, method, properties, body):
         "time": str(datetime.datetime.now()),
         "transcript": translation
     })
-    print(result)
+    logging.info(result)
     conn.produce('results', result)
 
 
 def listen_to_ogg(app):
-    print('Listening for OGG messages')
+    logging.info('Listening for OGG messages')
     ogg_conn = Connecter()
     ogg_conn.init_app(app)
     ogg_conn.listen('hello-ogg', callback_ogg)
 
 
 def listen_to_wav(app):
-    print('Listening for WAV messages')
+    logging.info('Listening for WAV messages')
     wav_conn = Connecter()
     wav_conn.init_app(app)
     wav_conn.listen('hello-wav', callback_wav)

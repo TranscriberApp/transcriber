@@ -5,6 +5,12 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: backend",
+      "type": "python",
+      "request": "launch",
+      "module": "backend.app"
+    },
+    {
       "name": "Python: listenerapp",
       "type": "python",
       "request": "launch",

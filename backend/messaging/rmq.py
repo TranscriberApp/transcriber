@@ -1,4 +1,5 @@
 import pika
+import logging
 
 
 class Connecter:
@@ -28,7 +29,7 @@ class Connecter:
         self.channel.basic_consume(queue=queue,
                                    auto_ack=True,
                                    on_message_callback=callback)
-        print(' [*] Waiting for messages. To exit press CTRL+C')
+        logging.info(f' [*] Waiting for messages on {queue}. To exit press CTRL+C')
         self.channel.start_consuming()
 
     def produce(self, queue, message):

@@ -13,6 +13,7 @@ import sys
 from deepspeech import Model
 import argparse
 import pathlib
+import logging
 
 fs = 44100  # Sample rate
 seconds = 5  # Duration of recording
@@ -34,7 +35,8 @@ def convert_samplerate(audio_path, desired_sample_rate):
 
 
 def load_scorer(ds, scorer):
-    print('Loading scorer from files {}'.format(scorer), file=sys.stderr)
+    logging.info('Loading scorer from files {}'.format(
+        scorer), file=sys.stderr)
     ds.enableExternalScorer(scorer)
 
 
@@ -42,7 +44,7 @@ def sample_audio(audiofile: str, desired_sample_rate):
     fin = wave.open(audiofile, 'rb')
     fs_orig = fin.getframerate()
     if fs_orig != desired_sample_rate:
-        print('Warning: original sample rate ({}) is different than {}hz. Resampling might produce erratic speech recognition.'.format(
+        logging.info('Warning: original sample rate ({}) is different than {}hz. Resampling might produce erratic speech recognition.'.format(
             fs_orig, desired_sample_rate), file=sys.stderr)
         fs_new, audio = convert_samplerate(audiofile, desired_sample_rate)
     else:
@@ -65,7 +67,8 @@ class DeepLearnModel:
             self._load_scorer(scorer)
 
     def _load_scorer(self, scorer):
-        print('Loading scorer from files {}'.format(scorer), file=sys.stderr)
+        logging.info('Loading scorer from files {}'.format(
+            scorer), file=sys.stderr)
         self.model.enableExternalScorer(scorer)
 
     def infer(self, audio_sample):

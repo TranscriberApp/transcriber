@@ -14,6 +14,11 @@ from flask.blueprints import Blueprint
 import copy
 from dotenv import load_dotenv
 from backend.messaging.rmq import Connecter
+import logging
+from threading import Thread
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 
 load_dotenv()
 
@@ -23,12 +28,12 @@ urls = Blueprint("urls", "urls", "static")
 client = None
 
 
-print('connected to RMQ')
+logging.info('connected to RMQ')
 
 
 # On IBM Cloud Cloud Foundry, get the port number from the environment variable PORT
 # When running this app on the local machine, default the port to 8000
-port = int(os.getenv('PORT', 8000))
+port = int(os.getenv('PORT', 5000))
 
 
 @urls.route('/')
@@ -48,7 +53,7 @@ def get_visitor():
     if client:
         return jsonify(list(map(lambda doc: doc['name'], db)))
     else:
-        print('No database')
+        logging.warning('No database')
         return jsonify([])
 
 # /**
@@ -73,7 +78,7 @@ def put_visitor():
         data['_id'] = my_document['_id']
         return jsonify(data)
     else:
-        print('No database')
+        logging.info('No database')
         return jsonify(data)
 
 
@@ -97,6 +102,17 @@ def uploader():
 def shutdown():
     if client:
         client.disconnect()
+
+
+def callback_results(ch, method, properties, body):
+    logging.info(body)
+
+
+def results_thread(app):
+    logging.info('Listening for result transcript messages')
+    results_conn = Connecter()
+    results_conn.init_app(app)
+    results_conn.listen('results', callback_results)
 
 
 def create_app():
@@ -146,6 +162,8 @@ def create_app():
 
 
 app = create_app()
+results_thread = Thread(target=results_thread, args=(app,), daemon=True)
+results_thread.start()
 
 
 if __name__ == '__main__':
