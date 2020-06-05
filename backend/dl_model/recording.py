@@ -73,4 +73,4 @@ class DeepLearnModel:
         return self.model.stt(audio)
 
 
-dl = DeepLearnModel()
+deep_learning_model = DeepLearnModel()

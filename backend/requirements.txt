@@ -5,4 +5,5 @@ sox
 pydub
 scipy
 gunicorn
-
+pika
+python-dotenv

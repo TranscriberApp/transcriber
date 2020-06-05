@@ -24,7 +24,7 @@ stages:
     # Build and push the image from the Dockerfile at the root of the project.
     # To push to a specific docker tag, amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
     # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
-    - /kaniko/executor --context ${CI_PROJECT_DIR}/backend --dockerfile ${CI_PROJECT_DIR}/backend/Dockerfile --destination ${TO}
+    - /kaniko/executor --context ${CI_PROJECT_DIR}/backend --dockerfile ${DFILE} --destination ${TO}
 
 .deploy_template: &deploy_definition
   stage: deploy
@@ -38,11 +38,32 @@ stages:
 build_docker_dev:
     <<: *docker_definition
     variables:
+        DFILE: ${CI_PROJECT_DIR}/backend/Dockerfile
         TO: ${CI_REGISTRY_IMAGE}:${DEV_TAG}
 
 
+
+### Docker build definitions
+build_docker_dev_listener:
+  <<: *docker_definition
+  variables:
+      DFILE: ${CI_PROJECT_DIR}/backend/Dockerfile.listener
+      TO: ${CI_REGISTRY_IMAGE}:${DEV_TAG}
+
   
 deploy_dev:
+  <<: *deploy_definition
+  variables:
+    ENVIRONMENT: dev
+    OPENSHIFT_SERVER: ${OPENSHIFT_SERVER_PROD}
+    TOKEN: ${OPENSHIFT_TOKEN}
+    NAMESPACE: ${NAMESPACE_DEV}
+    TAG: ${DEV_TAG}
+    ROUTE_HOSTNAME: https://${NAMESPACE_DEV}.web.cern.ch
+
+
+  
+deploy_dev_listener:
   <<: *deploy_definition
   variables:
     ENVIRONMENT: dev
