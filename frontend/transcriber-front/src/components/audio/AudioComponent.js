@@ -9,6 +9,8 @@ export class AudioComponent extends React.Component {
             recordedData: null,
             recordingSrc: null,
         };
+
+        this.websocket = new WebSocket("ws://192.168.0.1");
         this.toggleMicrophone = this.toggleMicrophone.bind(this);
         this.handleBlob = this.handleBlob.bind(this);
         this.getMicrophone = this.getMicrophone.bind(this);
@@ -19,7 +21,8 @@ export class AudioComponent extends React.Component {
     }
 
     handleBlob = (data) => {
-        this.setState({recordedData: data})
+        this.setState({recordedData: data});
+        this.websocket.send(data);
     };
 
     intervalCall = () => {
@@ -59,7 +62,7 @@ export class AudioComponent extends React.Component {
         return (
             <div className="controls">
                 <button onClick={this.toggleMicrophone}>
-                    {this.state.audio ? 'Stop microphone' : 'Get microphone input'}
+                    {this.state.audio ? 'Stop microphone' : 'Turn on microphone'}
                 </button>
 
                 {this.state.recordedData && <audio id={"replay"} controls>
