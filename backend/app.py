@@ -132,11 +132,17 @@ def callback_results(ch, method, properties, body):
     to_remove = []
     for conn in sockets.all_conns:
         if not conn.closed:
-            conn.send(utf_body)
+            try:
+                conn.send(utf_body)
+            except Exception:
+                pass
         else:
             to_remove.append(conn)
     for t in to_remove:
-        sockets.all_conns.remove(t)
+        try:
+            sockets.all_conns.remove(t)
+        except Exception:
+            pass
 
 
 def results_thread(app):
