@@ -30,6 +30,7 @@ pcs = set()
 meetings = dict()
 buffer = BytesIO()
 
+use_transcriber = os.getenv('USE_TRANSCRIBER', 0)
 
 # def convert_wav_to_ogg(wav_file, filename):
 #     return AudioSegment.from_wav(wav_file).export(filename, format="ogg")
@@ -89,7 +90,8 @@ class AudioTransformTrack(MediaStreamTrack):
 
         # logger.info(f"Got a new frame!!!! {frame}")
         try:
-            await self.encode_to_container(frame)
+            if use_transcriber:
+                await self.encode_to_container(frame)
         except Exception as e:
             logging.exception("Exception parsing frame")
 

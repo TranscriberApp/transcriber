@@ -15,12 +15,12 @@ import Particles from "react-particles-js";
 import Particler from "./Particler";
 
 class MainComponent extends React.Component {
+  socket = new WebSocket("ws://192.168.1.14:8080/ws");
   constructor(props) {
     super(props);
   }
 
   componentDidMount() {
-    this.socket = new WebSocket("ws://localhost:8080/ws");
     this.socket.onmessage = (ev) => {
       let data = JSON.parse(ev.data);
       console.log(data);
