@@ -1,4 +1,4 @@
-import {webSocketService} from "./WebSocketService";
+import socketIOClient from "socket.io-client";
 
 class RTCConnectionService {
     constructor() {
@@ -7,13 +7,15 @@ class RTCConnectionService {
     }
 
     async initConnection() {
+        const socket = socketIOClient("localhost:1234");
+
         const offer = await this.rtcConnection.createOffer();
         this.rtcConnection.setLocalDescription(new RTCSessionDescription(offer)).then(() => {
-            webSocketService.addListener("server-answer", msg => this.rtcConnection.setRemoteDescription(msg.answer));
-            webSocketService.webSocket.send(JSON.stringify({
-                type: "connect-to-server",
-                offer
-            }));
+            socket.on('answer', data => {
+                console.log('received answer ' + data.toString());
+                this.rtcConnection.setRemoteDescription(data.data)
+            });
+            socket.emit('offer', offer);
         });
     }
 }
