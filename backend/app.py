@@ -1,21 +1,25 @@
-from cloudant import Cloudant
-import pika
-from io import BytesIO, StringIO
-from flask import Flask, render_template, request, jsonify
 # from werkzeug import secure_filename
 import atexit
-import os
+import copy
 import json
-from backend.dl_model.recording import deep_learning_model
-from backend.dl_model.ogg_to_wav import convert
+import logging
+import os
 import pathlib
 import wave
-from flask.blueprints import Blueprint
-import copy
-from dotenv import load_dotenv
-from backend.messaging.rmq import Connecter
-import logging
+from io import BytesIO, StringIO
 from threading import Thread
+
+import pika
+from cloudant import Cloudant
+from dotenv import load_dotenv
+from flask import Flask, jsonify, render_template, request
+from flask.blueprints import Blueprint
+from flask_sockets import Sockets
+from gevent import pywsgi
+
+from backend.dl_model.ogg_to_wav import convert
+from backend.dl_model.recording import deep_learning_model
+from backend.messaging.rmq import Connecter
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
@@ -25,8 +29,13 @@ load_dotenv()
 conn = Connecter()
 db = None
 urls = Blueprint("urls", "urls", "static")
+ws = Blueprint('ws', __name__)
+
+
 client = None
 
+sockets = Sockets()
+sockets.all_conns = []
 
 logging.info('connected to RMQ')
 
@@ -88,14 +97,26 @@ def uploader():
         return render_template("upload.html")
     if request.method == 'POST':
         f = request.files['file']
+        username = request.form.get('username', 'anonymous')
         buffer = f.read()
         extension = f.filename.split(".")[1]
 
-        conn.produce(f'hello-{extension}', buffer)
+        conn.produce(f'hello-{extension}', buffer, {"username": username})
         sample = buffer
         if extension == "ogg":
             sample = convert(BytesIO(sample))
         return jsonify({"message": "processing..."})
+
+
+@ws.route('/transcript')
+def transcript_socket(socket):
+    global sockets
+    sockets.all_conns.append(socket)
+    while not socket.closed:
+        print("not closed")
+        message = socket.receive()
+        logging.info(f"Received: {message}")
+        socket.send(message)
 
 
 @atexit.register
@@ -106,6 +127,16 @@ def shutdown():
 
 def callback_results(ch, method, properties, body):
     logging.info(body)
+    global sockets
+    utf_body = str(body, encoding='utf-8')
+    to_remove = []
+    for conn in sockets.all_conns:
+        if not conn.closed:
+            conn.send(utf_body)
+        else:
+            to_remove.append(conn)
+    for t in to_remove:
+        sockets.all_cons.remove(t)
 
 
 def results_thread(app):
@@ -125,10 +156,12 @@ def create_app():
     # deep_learning_model.init_app(app)
     # Init the RMQ connection
     conn.init_app(app)
+    sockets.init_app(app)
 
     conn.define_queue("hello-wav")
     conn.define_queue("hello-ogg")
 
+    sockets.register_blueprint(ws)
     app.register_blueprint(urls)
 
     db_name = 'mydb'
@@ -166,5 +199,9 @@ results_thread = Thread(target=results_thread, args=(app,), daemon=True)
 results_thread.start()
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=port, debug=True)
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=port, debug=True)
+if __name__ == "__main__":
+    from geventwebsocket.handler import WebSocketHandler
+    server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
+    server.serve_forever()

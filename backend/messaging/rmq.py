@@ -1,5 +1,6 @@
-import pika
 import logging
+
+import pika
 
 
 class Connecter:
@@ -39,7 +40,11 @@ class Connecter:
             f' [*] Waiting for messages on {queue}. To exit press CTRL+C')
         channel.start_consuming()
 
-    def produce(self, queue, message):
+    def produce(self, queue, message, propdict=None):
         self._connect()
+        if propdict is None:
+            propdict = dict()
+        props = pika.BasicProperties(headers=propdict)
         channel = self.connection.channel()
-        channel.basic_publish('', routing_key=queue, body=message)
+        channel.basic_publish('', routing_key=queue,
+                              body=message, properties=props)

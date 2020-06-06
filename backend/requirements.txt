@@ -1,4 +1,5 @@
 Flask>=1.0.0
+gevent
 cloudant==2.13.0
 deepspeech
 sox
@@ -7,3 +8,4 @@ scipy
 gunicorn
 pika
 python-dotenv
+flask-sockets

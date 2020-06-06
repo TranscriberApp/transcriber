@@ -1,15 +1,17 @@
-from flask import Flask
-from backend.messaging.rmq import Connecter
-from flask.json import jsonify
-import os
-from dotenv import load_dotenv
-from threading import Thread
-from backend.dl_model.recording import deep_learning_model
-from backend.dl_model.ogg_to_wav import convert
-from io import BytesIO
-import json
 import datetime
+import json
 import logging
+import os
+from io import BytesIO
+from threading import Thread
+
+from dotenv import load_dotenv
+from flask import Flask
+from flask.json import jsonify
+
+from backend.dl_model.ogg_to_wav import convert
+from backend.dl_model.recording import deep_learning_model
+from backend.messaging.rmq import Connecter
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
@@ -29,12 +31,11 @@ def callback_ogg(ch, method, properties, body):
     translation = deep_learning_model.infer(BytesIO(sample.read()))
     result = json.dumps({
         "time": str(datetime.datetime.now()),
-        "transcript": translation
+        "transcript": translation,
+        "username": properties.headers.get('username', 'anonymous')
     })
-    print(ch)
-    print(method)
-    print(properties)
     logging.info(result)
+    
     conn.produce('results', result)
 
 
@@ -42,7 +43,8 @@ def callback_wav(ch, method, properties, body):
     translation = deep_learning_model.infer(BytesIO(body))
     result = json.dumps({
         "time": str(datetime.datetime.now()),
-        "transcript": translation
+        "transcript": translation,
+        "username": properties.headers.get('username', 'anonymous')
     })
     logging.info(result)
     conn.produce('results', result)
