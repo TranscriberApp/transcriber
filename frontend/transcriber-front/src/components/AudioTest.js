@@ -17,6 +17,7 @@ function createPeerConnection() {
     var config = {
         sdpSemantics: 'unified-plan'
     };
+    // config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
 
     // if (document.getElementById('use-stun').checked) {
     //     config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
@@ -46,6 +47,7 @@ function createPeerConnection() {
             document.getElementById('video').srcObject = evt.streams[0];
         }
         else {
+            console.log("got tracK: ", evt);
             document.getElementById('audio').srcObject = evt.streams[0];
         }
     });
@@ -74,7 +76,7 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('http://localhost:8080/offer', {
+        return fetch('http://192.168.1.14:8080/offer', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -164,6 +166,9 @@ function start() {
             stream.getTracks().forEach(function(track) {
                 pc.addTrack(track, stream);
             });
+            pc.onaddstream = () => {
+                console.log("added stream");
+            }
             return negotiate();
         }, function(err) {
             alert('Could not acquire media: ' + err);

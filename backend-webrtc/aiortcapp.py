@@ -17,6 +17,9 @@ ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
 pcs = set()
+alltracks = set()
+
+pcs_to_tracks = dict()
 
 
 class AudioTransformTrack(MediaStreamTrack):
@@ -25,12 +28,13 @@ class AudioTransformTrack(MediaStreamTrack):
 
     def __init__(self, track):
         super().__init__()
+        logger.info(f"added {track}")
         self.track = track
 
     async def recv(self):
         frame = await self.track.recv()
 
-        logger.info(f"Got a new frame!!!! {frame}")
+        # logger.info(f"Got a new frame!!!! {frame}")
 
         return frame
 
@@ -116,13 +120,25 @@ async def javascript(request):
     return web.Response(content_type="application/javascript", text=content)
 
 
+def add_tracks_to_pcs():
+    for other_pc, track in alltracks:
+        for pc in pcs:
+            if pc is not other_pc and track not in pcs_to_tracks[pc]:
+                pc.addTrack(track)
+                pcs_to_tracks[pc].append(track)
+    pass
+
+
 async def offer(request):
     params = await request.json()
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
     pc = RTCPeerConnection()
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
+    print(pc_id)
     pcs.add(pc)
+    pcs_to_tracks[pc] = []
+    # add_tracks_to_pcs()
 
     def log_info(msg, *args):
         logger.info(pc_id + " " + msg, *args)
@@ -131,11 +147,11 @@ async def offer(request):
 
     # prepare local media
     player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    if args.write_audio:
-        log_info(f"recording to {args.write_audio}")
-        recorder = MediaRecorder(args.write_audio)
-    else:
-        recorder = MediaBlackhole()
+    # if args.write_audio:
+    #     log_info(f"recording to {args.write_audio}")
+    #     recorder = MediaRecorder(args.write_audio)
+    # else:
+    #     recorder = MediaBlackhole()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -160,7 +176,14 @@ async def offer(request):
             # pc.addTrack(player.audio)
             # recorder.addTrack(track)
             local_audio = AudioTransformTrack(track)
-            pc.addTrack(local_audio)
+            # pc.addTrack(recorder)
+            alltracks.add((pc, local_audio))
+            add_tracks_to_pcs()
+            print("added", local_audio)
+            # for pcx in pcs:
+            #     if pcx is not pc:
+            #         log_info(f"adding track for {pcx}")
+            #         pcx.addTrack(track)
         elif track.kind == "video":
             local_video = VideoTransformTrack(
                 track, transform=params["video_transform"]
@@ -174,7 +197,7 @@ async def offer(request):
 
     # handle offer
     await pc.setRemoteDescription(offer)
-    await recorder.start()
+    # await recorder.start()
 
     # send answer
     answer = await pc.createAnswer()
