@@ -1,5 +1,5 @@
 import socketIOClient from "socket.io-client";
-
+import { start } from "../components/AudioTest";
 
 class RTCConnectionService {
   constructor() {
@@ -28,32 +28,33 @@ class RTCConnectionService {
   async initConnection() {
     // const ws = new WebSocket("localhost:8080/test");
 
-    const offerInit = await this.rtcConnection.createOffer({
-      offerToReceiveVideo: false,
-      offerToReceiveAudio: true,
-    });
-    await this.rtcConnection.setLocalDescription(
-      new RTCSessionDescription(offerInit)
-    );
+    // const offerInit = await this.rtcConnection.createOffer({
+    //   offerToReceiveVideo: false,
+    //   offerToReceiveAudio: true,
+    // });
+    // await this.rtcConnection.setLocalDescription(
+    //   new RTCSessionDescription(offerInit)
+    // );
 
-    const offer = this.rtcConnection.localDescription;
+    // const offer = this.rtcConnection.localDescription;
 
-    //   .then(() => {});``
-    const resp = await fetch("http://localhost:8080/offer", {
-      body: JSON.stringify({
-        sdp: offer.sdp,
-        type: offer.type,
-        // video_transform: document.getElementById('video-transform').value
-      }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
-    const jsonResp = await resp.json();
-    console.log("got response: ", jsonResp);
-    console.log("answer sdp: ", jsonResp.sdp);
-    await this.rtcConnection.setRemoteDescription(jsonResp);
+    // //   .then(() => {});``
+    // const resp = await fetch("http://localhost:8080/offer", {
+    //   body: JSON.stringify({
+    //     sdp: offer.sdp,
+    //     type: offer.type,
+    //     // video_transform: document.getElementById('video-transform').value
+    //   }),
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   method: "POST",
+    // });
+    // const jsonResp = await resp.json();
+    // console.log("got response: ", jsonResp);
+    // console.log("answer sdp: ", jsonResp.sdp);
+    // await this.rtcConnection.setRemoteDescription(jsonResp);
+    start();
   }
 }
 

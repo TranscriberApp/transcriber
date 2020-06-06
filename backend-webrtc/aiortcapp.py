@@ -19,6 +19,22 @@ logger = logging.getLogger("pc")
 pcs = set()
 
 
+class AudioTransformTrack(MediaStreamTrack):
+
+    kind = "audio"
+
+    def __init__(self, track):
+        super().__init__()
+        self.track = track
+
+    async def recv(self):
+        frame = await self.track.recv()
+
+        logger.info(f"Got a new frame!!!! {frame}")
+
+        return frame
+
+
 class VideoTransformTrack(MediaStreamTrack):
     """
     A video stream track that transforms frames from an another track.
@@ -91,12 +107,12 @@ class VideoTransformTrack(MediaStreamTrack):
 
 
 async def index(request):
-    content = open(os.path.join(ROOT, "index.html"), "r").read()
+    content = open(os.path.join(ROOT, "backup", "index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
 
 
 async def javascript(request):
-    content = open(os.path.join(ROOT, "client.js"), "r").read()
+    content = open(os.path.join(ROOT, "backup", "client.js"), "r").read()
     return web.Response(content_type="application/javascript", text=content)
 
 
@@ -114,7 +130,7 @@ async def offer(request):
     log_info("Created for %s", request.remote)
 
     # prepare local media
-    # player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
+    player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
     if args.write_audio:
         log_info(f"recording to {args.write_audio}")
         recorder = MediaRecorder(args.write_audio)
@@ -142,8 +158,9 @@ async def offer(request):
 
         if track.kind == "audio":
             # pc.addTrack(player.audio)
-            recorder.addTrack(track)
-            pc.addTrack(track)
+            # recorder.addTrack(track)
+            local_audio = AudioTransformTrack(track)
+            pc.addTrack(local_audio)
         elif track.kind == "video":
             local_video = VideoTransformTrack(
                 track, transform=params["video_transform"]
@@ -153,7 +170,7 @@ async def offer(request):
         @track.on("ended")
         async def on_ended():
             log_info("Track %s ended", track.kind)
-            await recorder.stop()
+            # await recorder.stop()
 
     # handle offer
     await pc.setRemoteDescription(offer)
