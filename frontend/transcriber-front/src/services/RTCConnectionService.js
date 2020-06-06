@@ -25,11 +25,11 @@ class RTCConnectionService {
     }
 
     mute() {
-        this.audio.getAudioTracks()[0].enabled = false
+        // this.audio.getAudioTracks()[0].enabled = false
     }
 
     unmute() {
-        this.audio.getAudioTracks()[0].enabled = true
+        // this.audio.getAudioTracks()[0].enabled = true
     }
 
     async initConnection() {

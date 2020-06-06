@@ -1,14 +1,9 @@
 const initialState = {
-  participants: [
-    { username: "myrmarachne" },
-    { username: "Itachi" },
-    { username: "Kira" },
-  ],
-  messages: [
-    { author: "Sokrates", msg: "Elo ziooom" },
-    { author: "Platon", msg: "meh" },
-    { author: "Arystoteles", msg: "baka" },
-  ],
+  participants: [],
+  messages: [{
+    author: "ChatBot",
+    msg: "Welcome!"
+  }],
   username: undefined,
   meeting: undefined,
   isHost: false,
@@ -27,9 +22,9 @@ export const reducer = (state = initialState, action) => {
       });
     case "SET_PARTICIPANTS_LIST":
       return Object.assign({}, state, { participants: action.participants });
-    case "ADD_MESSAGE":
+    case "RECEIVED_MESSAGE":
       return Object.assign({}, state, {
-        messages: state.messages.concat(action.msg),
+        messages: state.messages.concat({msg: action.msg, author: action.username}),
       });
     default:
       return state;

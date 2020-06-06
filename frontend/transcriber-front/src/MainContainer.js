@@ -16,6 +16,25 @@ class MainComponent extends React.Component {
     super(props);
   }
 
+  componentDidMount() {
+    this.socket = new WebSocket("ws://localhost:8080/ws");
+    this.socket.onmessage = (ev) => {
+      let data = JSON.parse(ev.data)
+      console.log(data)
+      switch (data.type) {
+        case "participants-list":
+          this.props.updateParticipantsList(data.participants);
+          break;
+        case "add-message":
+          this.props.receivedMessage(data.msg, data.username);
+          break;
+        default:
+          console.log("Can't understand that message" + ev.data);
+          break;
+      }
+    };
+  }
+
   render() {
     return (
       <div className="App">
@@ -29,12 +48,15 @@ class MainComponent extends React.Component {
           )}
           {!this.props.username && <LoginContainer />}
           {this.props.username && !this.props.meeting && (
-            <EnterMeetingContainer />
+            <EnterMeetingContainer socket={this.socket}/>
           )}
         </div>
         {this.props.username && this.props.meeting && (
           <div className="main-container">
-            <MeetingContainer />
+            <MeetingContainer sendMessage={(msg, username) => {
+              console.log("Send " + msg.toString());
+              this.socket.send(JSON.stringify({type: 'send-message', msg: msg, username: username}))
+            }}/>
             <div>
               <div id="data-channel"></div>
               <div id="ice-connection-state"></div>
@@ -48,6 +70,16 @@ class MainComponent extends React.Component {
   }
 }
 
+const mapDispatchToProps = (dispatch) => {
+  return {
+    updateParticipantsList: (participants) => dispatch({ type: "SET_PARTICIPANTS_LIST", participants: participants }),
+    receivedMessage: (msg, username) => {
+      console.log("RECEIVED MSG")
+      dispatch({ type: "RECEIVED_MESSAGE", msg: msg, username: username })
+    },
+  };
+};
+
 const mapStateToProps = (state) => {
   return {
     username: state.username,
@@ -55,4 +87,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-export const MainContainer = connect(mapStateToProps)(MainComponent);
+export const MainContainer = connect(mapStateToProps, mapDispatchToProps)(MainComponent);

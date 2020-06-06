@@ -36,7 +36,7 @@ export class AudioComponent extends React.Component {
     return (
       <>
         {this.props.isHost && (
-          <div className="controls">
+          <div className="controls" style={{paddingTop: 15, paddingBottom: 15}}>
             <Button type="primary" onClick={this.toggleMicrophone}>
               {this.state.microphoneOn
                 ? "Turn off microphone"
@@ -49,7 +49,6 @@ export class AudioComponent extends React.Component {
             )}
           </div>
         )}
-        )
       </>
     );
   }
