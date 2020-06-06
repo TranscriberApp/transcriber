@@ -6,7 +6,7 @@ export class AudioComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      microphoneOn: true
+      microphoneOn: true,
     };
 
     this.toggleMicrophone = this.toggleMicrophone.bind(this);
@@ -23,25 +23,34 @@ export class AudioComponent extends React.Component {
   }
 
   async turnOnMicrophone() {
-    rtcConnectionService.unmute()
-    this.setState({ microphoneOn: true});
+    rtcConnectionService.unmute();
+    this.setState({ microphoneOn: true });
   }
 
   turnOffMicrophone() {
-    rtcConnectionService.mute()
+    rtcConnectionService.mute();
     this.setState({ microphoneOn: false });
   }
 
   render() {
     return (
-      <div className="controls">
-        <Button type="primary" onClick={this.toggleMicrophone}>
-          {this.state.microphoneOn ? "Turn off microphone" : "Turn on microphone"}
-        </Button>
-        {this.state.microphoneOn && (
-          <Button onClick={() => rtcConnectionService.stopConnection()}>Stop session</Button>
+      <>
+        {this.props.isHost && (
+          <div className="controls">
+            <Button type="primary" onClick={this.toggleMicrophone}>
+              {this.state.microphoneOn
+                ? "Turn off microphone"
+                : "Turn on microphone"}
+            </Button>
+            {this.state.microphoneOn && (
+              <Button onClick={() => rtcConnectionService.stopConnection()}>
+                Stop session
+              </Button>
+            )}
+          </div>
         )}
-      </div>
+        )
+      </>
     );
   }
 }

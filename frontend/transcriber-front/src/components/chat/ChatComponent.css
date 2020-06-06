@@ -1,16 +1,21 @@
-.transcript-container {
+.chat-container {
     padding: 5px;
     overflow: auto;
 }
 
-.transcript-list {
+
+.chat-list {
     background-color: white;
 }
 
-.transcript-header {
+.chat-header {
     font-size: calc(10px + 0.8vmin);
 }
 
-.transcript-item {
+.chat-item {
     text-align: justify;
+}
+
+.send-msg-form {
+    padding-top: 5px;
 }

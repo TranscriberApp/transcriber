@@ -1,8 +1,6 @@
 import React from "react";
-import logo from "./logo.svg";
 import "./App.css";
 import "./components/audio/AudioComponent";
-import { LoginComponent } from "./components/login/LoginComponent";
 import "antd/dist/antd.css";
 
 import {store} from "./redux/store";
