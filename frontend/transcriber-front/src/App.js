@@ -19,6 +19,7 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
+        <audio id="audio" autoPlay={true}></audio>
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <p>Hello {this.state.username}!</p>

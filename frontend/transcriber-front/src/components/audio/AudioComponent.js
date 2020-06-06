@@ -19,6 +19,14 @@ export class AudioComponent extends React.Component {
     };
   }
 
+  toggleMicrophone() {
+    if (this.state.audio) {
+      this.turnOffMicrophone();
+    } else {
+      this.turnOnMicrophone();
+    }
+  }
+
   async turnOnMicrophone() {
     const audio = await navigator.mediaDevices.getUserMedia({
       audio: true,
@@ -78,7 +86,7 @@ export class AudioComponent extends React.Component {
           {this.state.audio ? "Turn off microphone" : "Turn on microphone"}
         </Button>
         {this.state.audio && (
-          <button onClick={() => this.stopSession()}>Stop session</button>
+          <Button onClick={() => this.stopSession()}>Stop session</Button>
         )}
         {this.state.audioSource && (
           <audio controls src={this.state.audioSource} />
