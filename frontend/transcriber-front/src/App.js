@@ -3,9 +3,10 @@ import "./App.css";
 import "./components/audio/AudioComponent";
 import "antd/dist/antd.css";
 
-import {store} from "./redux/store";
-import {Provider} from "react-redux";
-import {MainContainer} from "./MainContainer";
+import { store } from "./redux/store";
+import { Provider } from "react-redux";
+import { MainContainer } from "./MainContainer";
+import Particles from "react-particles-js";
 
 class App extends React.Component {
   constructor(props) {
@@ -13,9 +14,9 @@ class App extends React.Component {
   }
   render() {
     return (
-        <Provider store={store}>
-          <MainContainer />
-        </Provider>
+      <Provider store={store}>
+        <MainContainer />
+      </Provider>
     );
   }
 }
