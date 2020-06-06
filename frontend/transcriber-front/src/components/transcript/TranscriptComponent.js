@@ -21,15 +21,10 @@ export class TranscriptComponent extends React.Component {
                 {speaker: "Hamilton", text: "The first words"}, {speaker: "Bell", text: "and the answer"}]
         };
         this.addTranscript = this.addTranscript.bind(this);
-        this.listener = msg => this.addTranscript(msg.text);
-        webSocketService.addListener('add-transcript', this.listener);
+        this.socket = new WebSocket("ws://192.168.0.1");
+        this.socket.onmessage = event => this.addTranscript(JSON.parse(event.data));
     }
 
-
-    componentWillUnmount() {
-        webSocketService.removeListener(this.listener);
-        super.componentWillUnmount();
-    }
 
     addTranscript(transcriptPart) {
         this.setState({
