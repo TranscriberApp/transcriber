@@ -2,56 +2,22 @@ import React from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import "./components/audio/AudioComponent";
-import { rtcConnectionService } from "./services/RTCConnectionService";
 import { LoginComponent } from "./components/login/LoginComponent";
 import "antd/dist/antd.css";
 
-import { MeetingComponent } from "./components/meetings/MeetingComponent";
-import { Button } from "antd";
+import {store} from "./redux/store";
+import {Provider} from "react-redux";
+import {MainContainer} from "./MainContainer";
 
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      username: undefined,
-    };
   }
   render() {
     return (
-      <div className="App">
-
-        <div id="media" style={{"display": "none"}}>
-            <h2>Media</h2>
-
-            <audio id="audio" autoplay="true"></audio>
-            <video id="video" autoplay="true" playsinline="true"></video>
-        </div>
-        <div id="data-channel"></div>
-        <div id="ice-connection-state"></div>
-        <div id="ice-gathering-state"></div>
-        <div id="signaling-state"></div>
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>Hello {this.state.username}!</p>
-          {!this.state.username && (
-            <LoginComponent
-              onFinish={(value) => this.setState({ username: value.username })}
-            />
-          )}
-        </header>
-        <div className="main-container">
-          <MeetingComponent />
-        </div>
-        <div>
-          <Button type="primary" onClick={rtcConnectionService.initConnection}>
-            Init connection
-          </Button>
-
-          <Button type="primary" onClick={rtcConnectionService.initConnectionListener}>
-            Init connection as listener
-          </Button>
-        </div>
-      </div>
+        <Provider store={store}>
+          <MainContainer />
+        </Provider>
     );
   }
 }

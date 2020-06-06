@@ -2,64 +2,110 @@ import socketIOClient from "socket.io-client";
 import { start, startListener } from "../components/AudioTest";
 
 class RTCConnectionService {
-  constructor() {
-    this.rtcConnection = new RTCPeerConnection({
-      sdpSemantics: "unified-plan",
-    });
-    this.initConnection = this.initConnection.bind(this);
+    constructor() {
+        this.rtcConnection = new RTCPeerConnection({
+            sdpSemantics: "unified-plan",
+        });
+        this.initConnection = this.initConnection.bind(this);
 
-    // connect audio / video
-    this.rtcConnection.addEventListener("track", function (evt) {
-      console.log("incomming track");
-      console.log(evt);
-      if (evt.track.kind == "video") {
-        document.getElementById("video").srcObject = evt.streams[0];
-        console.log("video elem added");
-      } else {
-        const audioObj = document.getElementById("audio"); 
-        console.log(audioObj);
-        audioObj.srcObject = evt.streams[0];
-        console.log(audioObj.srcObject);
-        console.log(evt.streams[0])
+
+        // connect audio / video
+        this.rtcConnection.addEventListener("track", function (evt) {
+
+            if (evt.track.kind == "video") {
+
+            } else {
+                const audioObj = document.getElementById("audio");
+                console.log(audioObj);
+                audioObj.srcObject = evt.streams[0];
+                console.log(audioObj.srcObject);
+                console.log(evt.streams[0])
+            }
+        });
+    }
+
+    mute() {
+        this.audio.getAudioTracks()[0].enabled = false
+    }
+
+    unmute() {
+        this.audio.getAudioTracks()[0].enabled = true
+    }
+
+    async initConnection() {
+        // navigator.mediaDevices.getUserMedia({
+        //     audio: true,
+        //     video: false,
+        // }).then(audio => {
+        //     this.audio = audio;
+        //     audio.getTracks()
+        //         .forEach((track) =>
+        //             rtcConnectionService.rtcConnection.addTrack(track, audio)
+        //         );
+        //     return this.rtcConnection.createOffer({
+        //         offerToReceiveVideo: false,
+        //         offerToReceiveAudio: true,
+        //     })
+        // }).then(offer => this.rtcConnection.setLocalDescription(offer))
+        //     .then(() => {
+        //         const connection = this.rtcConnection;
+        //         console.log(connection)
+        //         return new Promise(function (resolve) {
+        //             if (connection.iceGatheringState === 'complete') {
+        //                 resolve();
+        //             } else {
+        //                 function checkState() {
+        //                     if (connection.iceGatheringState === 'complete') {
+        //                         connection.removeEventListener('icegatheringstatechange', checkState);
+        //                         resolve();
+        //                     }
+        //                 }
+
+        //                 connection.addEventListener('icegatheringstatechange', checkState);
+        //             }
+        //         })
+        //     }).then(() => {
+        //     const offer = this.rtcConnection.localDescription
+        //     return fetch("http://localhost:8080/offer", {
+        //         body: JSON.stringify({
+        //             sdp: offer.sdp,
+        //             type: offer.type,
+        //             // video_transform: document.getElementById('video-transform').value
+        //         }),
+        //         headers: {
+        //             "Content-Type": "application/json",
+        //         },
+        //         method: "POST",
+        //     });
+        // }).then(response => response.json())
+        //     .then(answer => this.rtcConnection.setRemoteDescription(answer))
+        start();
+    }
+
+    async stopConnection() {
+      if (this.rtcConnection.getTransceivers) {
+        this.rtcConnection.getTransceivers().forEach(function(transceiver) {
+          if (transceiver.stop) {
+            transceiver.stop();
+          }
+        });
       }
-    });
-  }
 
-  async initConnection() {
-    // const ws = new WebSocket("localhost:8080/test");
+      // close local audio / video
+      this.rtcConnection.getSenders().forEach(function(sender) {
+        sender.track.stop();
+      });
 
-    // const offerInit = await this.rtcConnection.createOffer({
-    //   offerToReceiveVideo: false,
-    //   offerToReceiveAudio: true,
-    // });
-    // await this.rtcConnection.setLocalDescription(
-    //   new RTCSessionDescription(offerInit)
-    // );
+      // close peer connection
+      const connection = this.rtcConnection;
+      setTimeout(function() {
+        connection.close();
+      }, 500);
+    }
 
-    // const offer = this.rtcConnection.localDescription;
-
-    // //   .then(() => {});``
-    // const resp = await fetch("http://localhost:8080/offer", {
-    //   body: JSON.stringify({
-    //     sdp: offer.sdp,
-    //     type: offer.type,
-    //     // video_transform: document.getElementById('video-transform').value
-    //   }),
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   method: "POST",
-    // });
-    // const jsonResp = await resp.json();
-    // console.log("got response: ", jsonResp);
-    // console.log("answer sdp: ", jsonResp.sdp);
-    // await this.rtcConnection.setRemoteDescription(jsonResp);
-    start();
-  }
-
-  async initConnectionListener() {
-    startListener();
-  }
+    async initConnectionListener() {
+      startListener();
+    }
 }
 
 export let rtcConnectionService = new RTCConnectionService();

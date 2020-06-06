@@ -1,10 +1,11 @@
 import React from "react";
 import {Button, Form, Input} from 'antd';
 import {UserOutlined} from '@ant-design/icons';
+import {connect} from "react-redux";
 
-export function LoginComponent(props) {
+function LoginComponent(props) {
     return (
-        <Form name="login" layout="vertical" size="large" onFinish={props.onFinish}>
+        <Form name="login" layout="vertical" size="large" onFinish={s => props.handleLogin(s.username)}>
             <Form.Item
                 name="username"
                 rules={[{required: true, message: 'Please input your username',},]}
@@ -19,4 +20,15 @@ export function LoginComponent(props) {
         </Form>
     )
 }
+
+const mapStateToProps = () => {
+    return {}
+};
+const mapDispatchToProps = dispatch => {
+    return {
+        handleLogin: username => dispatch({type: 'LOGIN', username: username})
+    }
+};
+
+export const LoginContainer = connect(mapStateToProps, mapDispatchToProps)(LoginComponent);
 

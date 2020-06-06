@@ -7,10 +7,10 @@ var dc = null, dcInterval = null;
 
 function createPeerConnection() {
     // get DOM elements
-    var dataChannelLog = document.getElementById('data-channel'),
-    iceConnectionLog = document.getElementById('ice-connection-state'),
-    iceGatheringLog = document.getElementById('ice-gathering-state'),
-    signalingLog = document.getElementById('signaling-state');
+    // var dataChannelLog = document.getElementById('data-channel'),
+    // iceConnectionLog = document.getElementById('ice-connection-state'),
+    // iceGatheringLog = document.getElementById('ice-gathering-state'),
+    // signalingLog = document.getElementById('signaling-state');
 
     var config = {
         sdpSemantics: 'unified-plan'
@@ -19,20 +19,20 @@ function createPeerConnection() {
     pc = new RTCPeerConnection(config);
 
     // register some listeners to help debugging
-    pc.addEventListener('icegatheringstatechange', function() {
-        iceGatheringLog.textContent += ' -> ' + pc.iceGatheringState;
-    }, false);
-    iceGatheringLog.textContent = pc.iceGatheringState;
-
-    pc.addEventListener('iceconnectionstatechange', function() {
-        iceConnectionLog.textContent += ' -> ' + pc.iceConnectionState;
-    }, false);
-    iceConnectionLog.textContent = pc.iceConnectionState;
-
-    pc.addEventListener('signalingstatechange', function() {
-        signalingLog.textContent += ' -> ' + pc.signalingState;
-    }, false);
-    signalingLog.textContent = pc.signalingState;
+    // pc.addEventListener('icegatheringstatechange', function() {
+    //     iceGatheringLog.textContent += ' -> ' + pc.iceGatheringState;
+    // }, false);
+    // iceGatheringLog.textContent = pc.iceGatheringState;
+    //
+    // pc.addEventListener('iceconnectionstatechange', function() {
+    //     iceConnectionLog.textContent += ' -> ' + pc.iceConnectionState;
+    // }, false);
+    // iceConnectionLog.textContent = pc.iceConnectionState;
+    //
+    // pc.addEventListener('signalingstatechange', function() {
+    //     signalingLog.textContent += ' -> ' + pc.signalingState;
+    // }, false);
+    // signalingLog.textContent = pc.signalingState;
 
     // connect audio / video
     pc.addEventListener('track', function(evt) {
@@ -41,7 +41,8 @@ function createPeerConnection() {
             document.getElementById('video').srcObject = evt.streams[0];
         }
         else {
-            console.log("got tracK: ", evt);
+            console.log("xd")
+            console.log(evt.streams[0])
             document.getElementById('audio').srcObject = evt.streams[0];
         }
     });

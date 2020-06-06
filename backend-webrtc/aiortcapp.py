@@ -149,13 +149,15 @@ async def listener(request):
             await pc.close()
             pcs.discard(pc)
     
+    for speaker in speakers:
+        log_info("adding speakers")
+        pc.addTrack(speaker)
+        
     @pc.on("track")
     def on_track(track):
         log_info("Track %s received", track.kind)
         if track.kind == "audio":
-            for speaker in speakers:
-                log_info("adding speakers")
-                pc.addTrack(speaker)
+            pass
 
         @track.on("ended")
         async def on_ended():
