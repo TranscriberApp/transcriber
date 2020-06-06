@@ -5,13 +5,20 @@ import logging
 import os
 import ssl
 import uuid
+from datetime import datetime, timedelta
+from io import BytesIO
+from threading import Thread, Timer
 
 import aiohttp_cors
+import av
+import requests
 # import cv2
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer, MediaRecorder
 from av import VideoFrame
+# from pydub import AudioSegment
+from scipy.io.wavfile import write
 
 ROOT = os.path.dirname(__file__)
 
@@ -22,21 +29,69 @@ listeners = set()
 alltracks = set()
 pcs = set()
 meetings = dict()
+buffer = BytesIO()
+
+
+# def convert_wav_to_ogg(wav_file, filename):
+#     return AudioSegment.from_wav(wav_file).export(filename, format="ogg")
+
+
+def call_external_translator(filename):
+    logging.info(f"Calling transcripts with: {filename}")
+    # convert_wav_to_ogg(open(filename, "rb"), oggfile)
+    requests.post("https://jitsi.web.cern.ch/upload",
+                  files={'file': ('helloworld.wav', open(filename, "rb"))})
+    dname = os.path.join(os.path.curdir, filename)
+    logging.info(f"done, removing: {dname}")
 
 
 class AudioTransformTrack(MediaStreamTrack):
 
     kind = "audio"
+    codec_name = "pcm_s16le"
+    # codec_name = "pcm_s16be"
+    # codec_name = "aac"
 
     def __init__(self, track):
         super().__init__()
-        logger.info(f"added {track}")
+
         self.track = track
+        self._init_container()
+        self.now = datetime.now()
+
+    def _init_container(self):
+        self.filename = f"test{datetime.now()}.wav"
+        self.container = av.open(self.filename, mode="w")
+        self.stream = self.container.add_stream(self.codec_name)
+        logger.info(f"added {self.track}")
+
+    def send_buffer_to_encoder(self):
+        # call_external_translator(self.filename)
+        Thread(target=call_external_translator, args=(self.filename, )).start()
+        # t.join()
+
+    async def encode_to_container(self, frame):
+        if self.container:
+            for packet in self.stream.encode(frame):
+                self.container.mux(packet)
+
+            diff = datetime.now() - self.now
+            if diff > timedelta(seconds=5):
+                self.container.close()
+                self.container = None
+                print("dumping")
+                self.send_buffer_to_encoder()
+                # print(self.buffer.getbuffer().nbytes)
+                self.now = datetime.now()
+                self._init_container()
 
     async def recv(self):
         frame = await self.track.recv()
-
         # logger.info(f"Got a new frame!!!! {frame}")
+        try:
+            await self.encode_to_container(frame)
+        except Exception as e:
+            logging.exception("Exception parsing frame")
 
         return frame
 
@@ -52,7 +107,6 @@ class VideoTransformTrack(MediaStreamTrack):
         super().__init__()  # don't forget this!
         self.track = track
         self.transform = transform
-
 
 
 async def index(request):
@@ -91,11 +145,11 @@ async def listener(request):
         if pc.iceConnectionState == "failed":
             await pc.close()
             pcs.discard(pc)
-    
+
     for speaker in speakers:
         log_info("adding speakers")
         pc.addTrack(speaker)
-        
+
     @pc.on("track")
     def on_track(track):
         log_info("Track %s received", track.kind)
@@ -106,10 +160,8 @@ async def listener(request):
         async def on_ended():
             log_info("Track %s ended", track.kind)
 
-
     # handle offer
     await pc.setRemoteDescription(offer)
-    # await recorder.start()
 
     # send answer
     answer = await pc.createAnswer()
@@ -141,11 +193,7 @@ async def offer(request):
 
     # prepare local media
     player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
-    # if args.write_audio:
-    #     log_info(f"recording to {args.write_audio}")
-    #     recorder = MediaRecorder(args.write_audio)
-    # else:
-    #     recorder = MediaBlackhole()
+    recorder = MediaBlackhole()
 
     @pc.on("datachannel")
     def on_datachannel(channel):
@@ -173,6 +221,7 @@ async def offer(request):
         if track.kind == "audio":
             local_audio = AudioTransformTrack(track)
             speakers.add(local_audio)
+            recorder.addTrack(local_audio)
             print("added", local_audio)
         elif track.kind == "video":
             speakers.add(track)
@@ -184,7 +233,7 @@ async def offer(request):
 
     # handle offer
     await pc.setRemoteDescription(offer)
-    # await recorder.start()
+    await recorder.start()
 
     # send answer
     answer = await pc.createAnswer()
