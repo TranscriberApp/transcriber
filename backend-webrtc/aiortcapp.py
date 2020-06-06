@@ -182,7 +182,7 @@ class WebSocket(web.View):
             meeting = app['meetings'][meeting_name]
             host = meeting['host']
 
-            return [(participant, participant == host) for participant in meeting['participants']]
+            return [{'username': participant, 'isHost': participant == host} for participant in meeting['participants']]
 
         try:
             async for msg in ws:
