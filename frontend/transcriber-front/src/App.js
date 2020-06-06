@@ -7,6 +7,7 @@ import {rtcConnectionService} from "./services/RTCConnectionService";
 import {LoginComponent} from "./components/login/LoginComponent";
 import 'antd/dist/antd.css';
 import {TranscriptComponent} from "./components/transcript/TranscriptComponent";
+import {ParticipantsComponent} from "./components/participants/ParticipantsComponent";
 
 class App extends React.Component {
     constructor(props) {
@@ -26,7 +27,8 @@ class App extends React.Component {
                     {!this.state.username && <LoginComponent onFinish={value => this.setState({username: value.username})}/>}
                 </header>
                 <section>
-                    <TranscriptComponent />
+                    {/*<TranscriptComponent />*/}
+                    <ParticipantsComponent />
                     <div>
                         <button onClick={rtcConnectionService.initConnection}>
                             Init connection

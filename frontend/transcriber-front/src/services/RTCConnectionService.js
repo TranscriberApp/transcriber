@@ -18,5 +18,4 @@ class RTCConnectionService {
     }
 }
 
-
 export let rtcConnectionService = new RTCConnectionService();

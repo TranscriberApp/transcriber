@@ -1,0 +1,14 @@
+
+.participant-container {
+    width: 300px;
+    text-align: left;
+    font-size: calc(10px + 0.6vmin);
+}
+
+.participants-list {
+    width: 300px;
+}
+
+.header-text {
+    font-size: calc(10px + 0.8vmin);
+}
