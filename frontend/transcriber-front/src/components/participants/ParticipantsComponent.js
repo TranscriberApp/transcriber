@@ -7,11 +7,12 @@ const { Text } = Typography;
 
 function renderParticipant(participant, currentUser) {
   return (
-    <div className={"participant-container"}>
+    <div className={["participant-container"]}>
       <Avatar
         shape="round"
         icon={<UserOutlined />}
-        style={{ verticalAlign: "middle" }}
+        style={{ verticalAlign: "middle", color: "#1890ff"}}
+
       />
       <Text style={{ paddingLeft: 10 }}>{(participant.username !== currentUser && participant.username) || "You" }</Text>
         {participant.isHost && <Text>(host)</Text>}

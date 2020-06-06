@@ -14,14 +14,19 @@ import { EnterMeetingContainer } from "./components/meetings/EnterMeetingCompone
 class MainComponent extends React.Component {
   constructor(props) {
     super(props);
-    this.socket = new WebSocket("ws://192.168.0.1");
+  }
+
+  componentDidMount() {
+    this.socket = new WebSocket("ws://localhost:8080/ws");
     this.socket.onmessage = (ev) => {
-      switch (ev.data.type) {
+      let data = JSON.parse(ev.data)
+      console.log(data)
+      switch (data.type) {
         case "participants-list":
-          props.updateParticipantsList(ev.data.participants);
+          this.props.updateParticipantsList(data.participants);
           break;
         case "add-message":
-          props.receivedMessage(ev.data.msg);
+          this.props.receivedMessage(data.msg, data.username);
           break;
         default:
           console.log("Can't understand that message" + ev.data);
@@ -68,7 +73,10 @@ class MainComponent extends React.Component {
 const mapDispatchToProps = (dispatch) => {
   return {
     updateParticipantsList: (participants) => dispatch({ type: "SET_PARTICIPANTS_LIST", participants: participants }),
-    receivedMessage: (msg) => dispatch({ type: "RECEIVED_MESSAGE", msg: msg }),
+    receivedMessage: (msg, username) => {
+      console.log("RECEIVED MSG")
+      dispatch({ type: "RECEIVED_MESSAGE", msg: msg, username: username })
+    },
   };
 };
 
