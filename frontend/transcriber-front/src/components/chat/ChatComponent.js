@@ -2,7 +2,7 @@ import React from "react";
 import {Button, Form, Input, List, Typography} from "antd";
 import {connect} from "react-redux";
 import './ChatComponent.css'
-import {UserOutlined} from "@ant-design/icons";
+import {SendOutlined, UserOutlined} from "@ant-design/icons";
 const {Text} = Typography;
 
 class ChatComponent extends React.Component {
@@ -34,7 +34,7 @@ class ChatComponent extends React.Component {
                         name="msg"
                         rules={[{required: true, message: 'Please input your message',},]}
                     >
-                        <Input prefix={<UserOutlined className="site-form-item-icon"/>} placeholder="Your message..."/>
+                        <Input prefix={<SendOutlined className="site-form-item-icon"/>} placeholder="Your message..."/>
                     </Form.Item>
                     <Form.Item>
                         <Button type="primary" htmlType="submit">
