@@ -35,20 +35,20 @@ export class AudioComponent extends React.Component {
   render() {
     return (
       <>
-        {this.props.isHost && (
-          <div className="controls" style={{paddingTop: 15, paddingBottom: 15}}>
-            <Button type="primary" onClick={this.toggleMicrophone}>
-              {this.state.microphoneOn
-                ? "Turn off microphone"
-                : "Turn on microphone"}
-            </Button>
-            {this.state.microphoneOn && (
-              <Button onClick={() => rtcConnectionService.stopConnection()}>
-                Stop session
-              </Button>
-            )}
-          </div>
-        )}
+        {/*{this.props.isHost && (*/}
+        {/*  <div className="controls" style={{paddingTop: 15, paddingBottom: 15}}>*/}
+        {/*    <Button type="primary" onClick={this.toggleMicrophone}>*/}
+        {/*      {this.state.microphoneOn*/}
+        {/*        ? "Turn off microphone"*/}
+        {/*        : "Turn on microphone"}*/}
+        {/*    </Button>*/}
+        {/*    {this.state.microphoneOn && (*/}
+        {/*      <Button onClick={() => rtcConnectionService.stopConnection()}>*/}
+        {/*        Stop session*/}
+        {/*      </Button>*/}
+        {/*    )}*/}
+        {/*  </div>*/}
+        {/*)}*/}
       </>
     );
   }
