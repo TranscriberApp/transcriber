@@ -1,7 +1,12 @@
 .transcript-container {
-    width: 40%;
     padding: 5px;
-    text-align: justify;
-    height: 400px;
     overflow: auto;
+}
+
+.transcript-header {
+    font-size: calc(10px + 0.8vmin);
+}
+
+.transcript-item {
+    text-align: justify;
 }

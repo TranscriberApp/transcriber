@@ -2,12 +2,12 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import './components/audio/AudioComponent'
-import {AudioComponent} from "./components/audio/AudioComponent";
 import {rtcConnectionService} from "./services/RTCConnectionService";
 import {LoginComponent} from "./components/login/LoginComponent";
 import 'antd/dist/antd.css';
-import {TranscriptComponent} from "./components/transcript/TranscriptComponent";
-import {ParticipantsComponent} from "./components/participants/ParticipantsComponent";
+
+import {MeetingComponent} from "./components/meetings/MeetingComponent";
+import {Button} from "antd";
 
 class App extends React.Component {
     constructor(props) {
@@ -26,16 +26,15 @@ class App extends React.Component {
                     </p>
                     {!this.state.username && <LoginComponent onFinish={value => this.setState({username: value.username})}/>}
                 </header>
-                <section>
-                    {/*<TranscriptComponent />*/}
-                    <ParticipantsComponent />
-                    <div>
-                        <button onClick={rtcConnectionService.initConnection}>
-                            Init connection
-                        </button>
-                    </div>
-                    <AudioComponent/>
-                </section>
+                <div className="main-container">
+                    <MeetingComponent />
+                </div>
+                <div>
+                    <Button type="primary" onClick={rtcConnectionService.initConnection}>
+                        Init connection
+                    </Button>
+
+                </div>
             </div>
         );
     }

@@ -1,5 +1,6 @@
 import React from "react";
 import {rtcConnectionService} from '../../services/RTCConnectionService'
+import {Button} from "antd";
 
 export class AudioComponent extends React.Component {
     constructor(props) {
@@ -42,9 +43,9 @@ export class AudioComponent extends React.Component {
     render() {
         return (
             <div className="controls">
-                <button onClick={this.toggleMicrophone}>
+                <Button type="primary" onClick={this.toggleMicrophone}>
                     {this.state.audio ? 'Turn off microphone' : 'Turn on microphone'}
-                </button>
+                </Button>
                 {this.state.audioSource && <audio controls src={this.state.audioSource}/>}
             </div>
         );

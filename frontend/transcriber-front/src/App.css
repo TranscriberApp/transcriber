@@ -37,3 +37,8 @@
   }
 }
 
+.main-container {
+  /* tmp */
+  width: 60%;
+  margin: auto
+}

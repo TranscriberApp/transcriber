@@ -25,7 +25,7 @@ export class ParticipantsComponent extends React.Component {
 
     render() {
         return (
-            <div>
+            <div className={"participants-list-container"}>
                 <List
                     header={<Text strong className={"header-text"}>Participants</Text>}
                     className={"participants-list"}

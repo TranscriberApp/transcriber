@@ -1,6 +1,5 @@
 import React from "react";
 import {Typography, Space, List} from "antd";
-import {webSocketService} from "../../services/WebSocketService";
 import './TranscriptComponent.css';
 const {Text} = Typography;
 
@@ -36,10 +35,10 @@ export class TranscriptComponent extends React.Component {
         return (
             <div className="transcript-container">
                 <List
-                    header={<Text strong>Transcript</Text>}
+                    header={<Text className={"transcript-header"} strong>Transcript</Text>}
                     bordered
                     dataSource={this.state.transcriptParts}
-                    renderItem={item => <List.Item><Text type="secondary"><strong>{item.speaker}</strong>: {item.text}</Text></List.Item>}
+                    renderItem={item => <List.Item className={"transcript-item"}><Text type="secondary"><strong>{item.speaker}</strong>: {item.text}</Text></List.Item>}
                 />
             </div>
         )
