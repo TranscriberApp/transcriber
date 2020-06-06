@@ -19,7 +19,13 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <audio id="audio" autoPlay={true}></audio>
+
+        <div id="media" style={{"display": "none"}}>
+            <h2>Media</h2>
+
+            <audio id="audio" autoplay="true"></audio>
+            <video id="video" autoplay="true" playsinline="true"></video>
+        </div>
         <div id="data-channel"></div>
         <div id="ice-connection-state"></div>
         <div id="ice-gathering-state"></div>
@@ -39,6 +45,10 @@ class App extends React.Component {
         <div>
           <Button type="primary" onClick={rtcConnectionService.initConnection}>
             Init connection
+          </Button>
+
+          <Button type="primary" onClick={rtcConnectionService.initConnectionListener}>
+            Init connection as listener
           </Button>
         </div>
       </div>

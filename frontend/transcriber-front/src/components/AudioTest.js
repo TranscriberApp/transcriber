@@ -1,6 +1,4 @@
 
-
-
 // peer connection
 var pc = null;
 
@@ -17,10 +15,6 @@ function createPeerConnection() {
     var config = {
         sdpSemantics: 'unified-plan'
     };
-
-    // if (document.getElementById('use-stun').checked) {
-    //     config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
-    // }
 
     pc = new RTCPeerConnection(config);
 
@@ -43,9 +37,11 @@ function createPeerConnection() {
     // connect audio / video
     pc.addEventListener('track', function(evt) {
         if (evt.track.kind == 'video') {
+            console.log("got video!")
             document.getElementById('video').srcObject = evt.streams[0];
         }
         else {
+            console.log("got tracK: ", evt);
             document.getElementById('audio').srcObject = evt.streams[0];
         }
     });
@@ -74,7 +70,49 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('http://localhost:8080/offer', {
+        return fetch('http://192.168.1.14:8080/offer', {
+            body: JSON.stringify({
+                sdp: offer.sdp,
+                type: offer.type
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            method: 'POST'
+        });
+    }).then(function(response) {
+        return response.json();
+    }).then(function(answer) {
+        console.log(answer.sdp);
+        return pc.setRemoteDescription(answer);
+    }).catch(function(e) {
+        alert(e);
+    });
+}
+
+
+function negotiateListener() {
+    return pc.createOffer().then(function(offer) {
+        return pc.setLocalDescription(offer);
+    }).then(function() {
+        // wait for ICE gathering to complete
+        return new Promise(function(resolve) {
+            if (pc.iceGatheringState === 'complete') {
+                resolve();
+            } else {
+                function checkState() {
+                    if (pc.iceGatheringState === 'complete') {
+                        pc.removeEventListener('icegatheringstatechange', checkState);
+                        resolve();
+                    }
+                }
+                pc.addEventListener('icegatheringstatechange', checkState);
+            }
+        });
+    }).then(function() {
+        var offer = pc.localDescription;
+        
+        return fetch('http://192.168.1.14:8080/listen', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -97,73 +135,34 @@ function negotiate() {
 }
 
 function start() {
-    // document.getElementById('start').style.display = 'none';
-
     pc = createPeerConnection();
 
     var time_start = null;
 
-    // function current_stamp() {
-    //     if (time_start === null) {
-    //         time_start = new Date().getTime();
-    //         return 0;
-    //     } else {
-    //         return new Date().getTime() - time_start;
-    //     }
-    // }
-
-    // if (document.getElementById('use-datachannel').checked) {
-    //     var parameters = JSON.parse(document.getElementById('datachannel-parameters').value);
-
-    //     dc = pc.createDataChannel('chat', parameters);
-    //     dc.onclose = function() {
-    //         clearInterval(dcInterval);
-    //         dataChannelLog.textContent += '- close\n';
-    //     };
-    //     dc.onopen = function() {
-    //         dataChannelLog.textContent += '- open\n';
-    //         dcInterval = setInterval(function() {
-    //             var message = 'ping ' + current_stamp();
-    //             dataChannelLog.textContent += '> ' + message + '\n';
-    //             dc.send(message);
-    //         }, 1000);
-    //     };
-    //     dc.onmessage = function(evt) {
-    //         dataChannelLog.textContent += '< ' + evt.data + '\n';
-
-    //         if (evt.data.substring(0, 4) === 'pong') {
-    //             var elapsed_ms = current_stamp() - parseInt(evt.data.substring(5), 10);
-    //             dataChannelLog.textContent += ' RTT ' + elapsed_ms + ' ms\n';
-    //         }
-    //     };
-    // }
 
     var constraints = {
         audio: true,
-        video: false
+        video: {
+            width: 320,
+            height: 240
+        }
     };
-
-    // if (document.getElementById('use-video').checked) {
-    //     var resolution = document.getElementById('video-resolution').value;
-    //     if (resolution) {
-    //         resolution = resolution.split('x');
-    //         constraints.video = {
-    //             width: parseInt(resolution[0], 0),
-    //             height: parseInt(resolution[1], 0)
-    //         };
-    //     } else {
-    //         constraints.video = true;
-    //     }
-    // }
 
     if (constraints.audio || constraints.video) {
         if (constraints.video) {
-            // document.getElementById('media').style.display = 'block';
+            document.getElementById('media').style.display = 'block';
         }
         navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
             stream.getTracks().forEach(function(track) {
                 pc.addTrack(track, stream);
             });
+
+            pc.onaddstream = () => {
+                console.log("added stream");
+            }
+            pc.onnegotiationneeded = () => {
+                console.log("nego needed!")
+            }
             return negotiate();
         }, function(err) {
             alert('Could not acquire media: ' + err);
@@ -171,8 +170,6 @@ function start() {
     } else {
         negotiate();
     }
-
-    // document.getElementById('stop').style.display = 'inline-block';
 }
 
 function stop() {
@@ -264,4 +261,44 @@ function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
-export { start };
+
+function startListener() {
+
+    pc = createPeerConnection();
+
+    var time_start = null;
+
+    var constraints = {
+        audio: true,
+        video: {
+            width: 320,
+            height: 240
+        }
+    };
+
+    if (constraints.audio || constraints.video) {
+        if (constraints.video) {
+            document.getElementById('media').style.display = 'block';
+        }
+        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+            stream.getTracks().forEach(function(track) {
+                pc.addTrack(track, stream);
+            });
+
+            pc.onaddstream = () => {
+                console.log("added stream");
+            }
+            pc.onnegotiationneeded = () => {
+                console.log("nego needed!")
+            }
+            return negotiateListener();
+        }, function(err) {
+            alert('Could not acquire media: ' + err);
+        });
+    } else {
+        negotiateListener();
+    }
+
+}
+
+export { start, startListener };

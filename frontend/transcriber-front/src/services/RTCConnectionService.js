@@ -1,5 +1,5 @@
 import socketIOClient from "socket.io-client";
-import { start } from "../components/AudioTest";
+import { start, startListener } from "../components/AudioTest";
 
 class RTCConnectionService {
   constructor() {
@@ -55,6 +55,10 @@ class RTCConnectionService {
     // console.log("answer sdp: ", jsonResp.sdp);
     // await this.rtcConnection.setRemoteDescription(jsonResp);
     start();
+  }
+
+  async initConnectionListener() {
+    startListener();
   }
 }
 
