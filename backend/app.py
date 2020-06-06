@@ -110,7 +110,7 @@ def uploader():
 
 @ws.route('/transcript')
 def transcript_socket(socket):
-    global sockets
+    # global sockets
     sockets.all_conns.append(socket)
     while not socket.closed:
         print("not closed")
@@ -127,16 +127,19 @@ def shutdown():
 
 def callback_results(ch, method, properties, body):
     logging.info(body)
-    global sockets
+    # global sockets
     utf_body = str(body, encoding='utf-8')
     to_remove = []
-    for conn in sockets.all_conns:
-        if not conn.closed:
-            conn.send(utf_body)
-        else:
-            to_remove.append(conn)
-    for t in to_remove:
-        sockets.all_cons.remove(t)
+    if hasattr(sockets, 'all_cons'):
+        for conn in sockets.all_conns:
+            if not conn.closed:
+                conn.send(utf_body)
+            else:
+                to_remove.append(conn)
+        for t in to_remove:
+            sockets.all_cons.remove(t)
+    else:
+        logging.warning("No 'all_cons' thing")
 
 
 def results_thread(app):
