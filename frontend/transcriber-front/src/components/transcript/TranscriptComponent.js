@@ -35,10 +35,11 @@ export class TranscriptComponent extends React.Component {
         return (
             <div className="transcript-container">
                 <List
+                    className={"transcript-list"}
                     header={<Text className={"transcript-header"} strong>Transcript</Text>}
                     bordered
                     dataSource={this.state.transcriptParts}
-                    renderItem={item => <List.Item className={"transcript-item"}><Text type="secondary"><strong>{item.speaker}</strong>: {item.text}</Text></List.Item>}
+                    renderItem={item => <List.Item className={"transcript-item"}><Text>{item.text}</Text></List.Item>}
                 />
             </div>
         )

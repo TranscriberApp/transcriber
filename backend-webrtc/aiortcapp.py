@@ -13,6 +13,7 @@ from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaPlayer
 
+
 ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
@@ -22,21 +23,65 @@ listeners = set()
 alltracks = set()
 pcs = set()
 meetings = dict()
+buffer = BytesIO()
+
+
+# def convert_wav_to_ogg(wav_file, filename):
+#     return AudioSegment.from_wav(wav_file).export(filename, format="ogg")
+
+
+def call_external_translator(filename):
+    logging.info(f"Calling transcripts with: {filename}")
+    # convert_wav_to_ogg(open(filename, "rb"), oggfile)
+    requests.post("https://jitsi.web.cern.ch/upload",
+                  files={'file': ('helloworld.wav', open(filename, "rb"))})
+    dname = os.path.join(os.path.curdir, filename)
+    logging.info(f"done, removing: {dname}")
 
 
 class AudioTransformTrack(MediaStreamTrack):
 
     kind = "audio"
+    codec_name = "pcm_s16le"
+    # codec_name = "pcm_s16be"
+    # codec_name = "aac"
 
     def __init__(self, track):
         super().__init__()
-        logger.info(f"added {track}")
+
         self.track = track
+        self._init_container()
+        self.now = datetime.now()
+
+    def _init_container(self):
+        self.filename = f"test{datetime.now()}.wav"
+        self.container = av.open(self.filename, mode="w")
+        self.stream = self.container.add_stream(self.codec_name)
+        logger.info(f"added {self.track}")
+
+    def send_buffer_to_encoder(self):
+        # call_external_translator(self.filename)
+        Thread(target=call_external_translator, args=(self.filename, )).start()
+        # t.join()
+
+    async def encode_to_container(self, frame):
+        if self.container:
+            for packet in self.stream.encode(frame):
+                self.container.mux(packet)
+
+            diff = datetime.now() - self.now
+            if diff > timedelta(seconds=5):
+                self.container.close()
+                self.container = None
+                print("dumping")
+                self.send_buffer_to_encoder()
+                # print(self.buffer.getbuffer().nbytes)
+                self.now = datetime.now()
+                self._init_container()
 
     async def recv(self):
         frame = await self.track.recv()
         return frame
-
 
 async def index(request):
     content = open(os.path.join(ROOT, "backup", "index.html"), "r").read()
@@ -65,11 +110,11 @@ async def listener(request):
         if pc.iceConnectionState == "failed":
             await pc.close()
             pcs.discard(pc)
-    
+
     for speaker in speakers:
         log_info("adding speakers")
         pc.addTrack(speaker)
-        
+
     @pc.on("track")
     def on_track(track):
         log_info("Track %s received", track.kind)
@@ -137,6 +182,7 @@ async def offer(request):
         if track.kind == "audio":
             local_audio = AudioTransformTrack(track)
             speakers.add(local_audio)
+            recorder.addTrack(local_audio)
             print("added", local_audio)
         elif track.kind == "video":
             speakers.add(track)
