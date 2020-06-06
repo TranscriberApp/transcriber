@@ -136,7 +136,7 @@ def callback_results(ch, method, properties, body):
         else:
             to_remove.append(conn)
     for t in to_remove:
-        sockets.all_cons.remove(t)
+        sockets.all_conns.remove(t)
 
 
 def results_thread(app):
