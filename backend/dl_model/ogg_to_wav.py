@@ -6,6 +6,10 @@ def convert(ogg_file):
     return AudioSegment.from_ogg(ogg_file).export(format="wav", bitrate="16k", parameters=["-ar", "16000"])
 
 
+def convert_wav_to_ogg(wav_file):
+    return AudioSegment.from_wav(wav_file).export(format="ogg")
+
+
 def _main():
     parser = argparse.ArgumentParser(
         __name__, description="Source ogg to wav file")

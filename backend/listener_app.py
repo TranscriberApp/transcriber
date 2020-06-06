@@ -27,27 +27,33 @@ port = int(os.getenv('PORT', 8000))
 
 
 def callback_ogg(ch, method, properties, body):
-    sample = convert(BytesIO(body))
-    translation = deep_learning_model.infer(BytesIO(sample.read()))
-    result = json.dumps({
-        "time": str(datetime.datetime.now()),
-        "transcript": translation,
-        "username": properties.headers.get('username', 'anonymous')
-    })
-    logging.info(result)
-    
-    conn.produce('results', result)
+    try:
+        sample = convert(BytesIO(body))
+        translation = deep_learning_model.infer(BytesIO(sample.read()))
+        result = json.dumps({
+            "time": str(datetime.datetime.now()),
+            "transcript": translation,
+            "username": properties.headers.get('username', 'anonymous')
+        })
+        logging.info(result)
+        
+        conn.produce('results', result)
+    except Exception:
+        logging.exception("Error processing ogg file")
 
 
 def callback_wav(ch, method, properties, body):
-    translation = deep_learning_model.infer(BytesIO(body))
-    result = json.dumps({
-        "time": str(datetime.datetime.now()),
-        "transcript": translation,
-        "username": properties.headers.get('username', 'anonymous')
-    })
-    logging.info(result)
-    conn.produce('results', result)
+    try:
+        translation = deep_learning_model.infer(BytesIO(body))
+        result = json.dumps({
+            "time": str(datetime.datetime.now()),
+            "transcript": translation,
+            "username": properties.headers.get('username', 'anonymous')
+        })
+        logging.info(result)
+        conn.produce('results', result)
+    except Exception:
+        logging.exception("Error processing wav file")
 
 
 def listen_to_ogg(app):
