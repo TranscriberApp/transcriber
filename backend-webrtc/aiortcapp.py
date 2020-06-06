@@ -277,7 +277,8 @@ class WebSocket(web.View):
                                 'participants': [data['username']],
                             }
                         msg = json.dumps({'type': 'participants-list', 'participants': participant_list(meeting_name)})
-                        await ws.send_str(msg)
+                        for _ws in self.request.app['websockets']:
+                            await _ws.send_str(msg)
                     elif data['type'] == 'send-message':
                         # Broadcast to everyone
                         data['type'] = "add-message"
