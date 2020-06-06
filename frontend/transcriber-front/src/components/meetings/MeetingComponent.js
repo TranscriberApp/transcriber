@@ -5,7 +5,7 @@ import { Col, Row } from "antd";
 import { AudioComponent } from "../audio/AudioComponent";
 import { connect } from "react-redux";
 import { ChatContainer } from "../chat/ChatComponent";
-import './MeetingComponent.css';
+import "./MeetingComponent.css";
 
 class MeetingComponent extends React.Component {
   constructor(props) {
@@ -19,29 +19,28 @@ class MeetingComponent extends React.Component {
             <h2>Meeting name: {this.props.meeting}</h2>
           </Col>
         </Row>
-        <div style={{ display: "none" }}>
-          <Row>
-            <div id="media" style={{ display: "none" }}>
-              <audio id="audio" autoPlay={true}></audio>
-              <video id="video" autoPlay={true} playsInline={true}></video>
-            </div>
-          </Row>
-        </div>
+        <Row>
+          <div id="media" style={{ display: "none" }}>
+            <audio id="audio" autoPlay={true}></audio>
+            <video id="video" autoPlay={true} playsInline={true}></video>
+          </div>
+        </Row>
         <Row>
           <Col span={16}>
             <TranscriptComponent />
           </Col>
           <Col span={8}>
-            <ParticipantsComponent participants={this.props.participants} currentUser={this.props.username}/>
+            <AudioComponent isHost={this.props.isHost} />
+            <ParticipantsComponent
+              participants={this.props.participants}
+              currentUser={this.props.username}
+            />
           </Col>
           <Col span={24}>
             <ChatContainer
               messages={this.props.messages}
               sendMessage={this.props.sendMessage}
             />
-          </Col>
-          <Col span={24}>
-            <AudioComponent isHost={this.props.isHost} />
           </Col>
         </Row>
       </div>
@@ -59,7 +58,4 @@ const mapStateToProps = (state) => {
   };
 };
 
-
-export const MeetingContainer = connect(
-  mapStateToProps,
-)(MeetingComponent);
+export const MeetingContainer = connect(mapStateToProps)(MeetingComponent);
