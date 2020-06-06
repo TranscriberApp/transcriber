@@ -14,7 +14,7 @@ function EnterMeetingComponent(props) {
         style={{ marginTop: 20 }}
         layout="vertical"
         size="large"
-        onFinish={(s) => props.handleJoin(s.meeting)}
+        onFinish={(s) => props.handleJoin(s.meeting, props.username)}
       >
         <Form.Item
           name="meeting"
@@ -36,7 +36,7 @@ function EnterMeetingComponent(props) {
         style={{ marginTop: 20 }}
         layout="vertical"
         size="large"
-        onFinish={(s) => props.handleCreate(s.meeting)}
+        onFinish={(s) => props.handleCreate(s.meeting, props.username)}
       >
         <Form.Item
           name="meeting"
@@ -57,17 +57,25 @@ function EnterMeetingComponent(props) {
   );
 }
 
-const mapStateToProps = () => {
-  return {};
-};
-const mapDispatchToProps = (dispatch) => {
+const mapStateToProps = state => {
   return {
-    handleJoin: (meeting) => {
+    username: state.username
+  };
+};
+const mapDispatchToProps = (dispatch, ownProps) => {
+  return {
+    handleJoin: (meeting, username) => {
       dispatch({ type: "JOIN", meeting: meeting });
+      ownProps.socket.send(
+        JSON.stringify({ type: "join-meeting", username: username, meetingName: meeting })
+      );
       rtcConnectionService.initConnectionListener();
     },
-    handleCreate: (meeting) => {
+    handleCreate: (meeting, username) => {
       dispatch({ type: "CREATE", meeting: meeting });
+      ownProps.socket.send(
+        JSON.stringify({ type: "create-meeting", username: username, meetingName: meeting })
+      );
       rtcConnectionService.initConnection();
     },
   };

@@ -1,8 +1,8 @@
 const initialState = {
   participants: [
-    { username: "myrmarachne" },
-    { username: "Itachi" },
-    { username: "Kira" },
+    { username: "myrmarachne", isHost: false },
+    { username: "Itachi", isHost: false },
+    { username: "Kira", isHost: true },
   ],
   messages: [
     { author: "Sokrates", msg: "Elo ziooom" },

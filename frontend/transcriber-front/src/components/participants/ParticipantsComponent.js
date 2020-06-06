@@ -5,7 +5,7 @@ import "./ParticipantsComponent.css";
 
 const { Text } = Typography;
 
-function renderParticipant(participant) {
+function renderParticipant(participant, currentUser) {
   return (
     <div className={"participant-container"}>
       <Avatar
@@ -13,7 +13,9 @@ function renderParticipant(participant) {
         icon={<UserOutlined />}
         style={{ verticalAlign: "middle" }}
       />
-      <Text style={{ paddingLeft: 10 }}>{participant.username}</Text>
+      <Text style={{ paddingLeft: 10 }}>{(participant.username !== currentUser && participant.username) || "You" }</Text>
+        {participant.isHost && <Text>(host)</Text>}
+
     </div>
   );
 }
@@ -21,13 +23,6 @@ function renderParticipant(participant) {
 export class ParticipantsComponent extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      participants: [
-        { username: "myrmarachne" },
-        { username: "Itachi" },
-        { username: "Kira" },
-      ],
-    };
   }
 
   render() {
@@ -43,7 +38,7 @@ export class ParticipantsComponent extends React.Component {
           bordered
           dataSource={this.props.participants}
           renderItem={(item) => (
-            <List.Item>{renderParticipant(item)}</List.Item>
+            <List.Item>{renderParticipant(item, this.props.currentUser)}</List.Item>
           )}
         />
       </div>
