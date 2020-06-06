@@ -11,7 +11,12 @@ import aiohttp
 import aiohttp_cors
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaPlayer
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer
+from datetime import datetime, timedelta
+from threading import Thread
+import av
+import requests
+from io import BytesIO
 
 
 ROOT = os.path.dirname(__file__)
@@ -81,6 +86,13 @@ class AudioTransformTrack(MediaStreamTrack):
 
     async def recv(self):
         frame = await self.track.recv()
+
+        # logger.info(f"Got a new frame!!!! {frame}")
+        try:
+            await self.encode_to_container(frame)
+        except Exception as e:
+            logging.exception("Exception parsing frame")
+
         return frame
 
 async def index(request):
@@ -156,6 +168,10 @@ async def offer(request):
 
     log_info("Created for %s", request.remote)
 
+    # prepare local media
+    # player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
+    recorder = MediaBlackhole()
+
     @pc.on("datachannel")
     def on_datachannel(channel):
         @channel.on("message")
@@ -194,6 +210,8 @@ async def offer(request):
 
     # handle offer
     await pc.setRemoteDescription(offer)
+    await recorder.start()
+
 
     # send answer
     answer = await pc.createAnswer()
