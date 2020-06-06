@@ -16,10 +16,12 @@ from av import VideoFrame
 ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
-pcs = set()
+speakers = set()
+speakers_video = set()
+listeners = set()
 alltracks = set()
-
-pcs_to_tracks = dict()
+pcs = set()
+meetings = dict()
 
 
 class AudioTransformTrack(MediaStreamTrack):
@@ -120,13 +122,60 @@ async def javascript(request):
     return web.Response(content_type="application/javascript", text=content)
 
 
-def add_tracks_to_pcs():
-    for other_pc, track in alltracks:
-        for pc in pcs:
-            if pc is not other_pc and track not in pcs_to_tracks[pc]:
-                pc.addTrack(track)
-                pcs_to_tracks[pc].append(track)
-    pass
+async def listener(request):
+    params = await request.json()
+    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
+
+    def log_info(msg, *args):
+        logger.info(pc_id + " " + msg, *args)
+
+    pc = RTCPeerConnection()
+    pc_id = "PeerConnection(%s)" % uuid.uuid4()
+    print(pc_id)
+    pcs.add(pc)
+
+    @pc.on("datachannel")
+    def on_datachannel(channel):
+        @channel.on("message")
+        def on_message(message):
+            log_info(f"got message: {message}")
+            if isinstance(message, str) and message.startswith("ping"):
+                channel.send("pong" + message[4:])
+
+    @pc.on("iceconnectionstatechange")
+    async def on_iceconnectionstatechange():
+        log_info("ICE connection state is %s", pc.iceConnectionState)
+        if pc.iceConnectionState == "failed":
+            await pc.close()
+            pcs.discard(pc)
+    
+    @pc.on("track")
+    def on_track(track):
+        log_info("Track %s received", track.kind)
+        if track.kind == "audio":
+            for speaker in speakers:
+                log_info("adding speakers")
+                pc.addTrack(speaker)
+
+        @track.on("ended")
+        async def on_ended():
+            log_info("Track %s ended", track.kind)
+
+
+    # handle offer
+    await pc.setRemoteDescription(offer)
+    # await recorder.start()
+
+    # send answer
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    return web.Response(
+        content_type="application/json",
+        text=json.dumps(
+            {"sdp": pc.localDescription.sdp, "type": pc.localDescription.type}
+        ),
+    )
 
 
 async def offer(request):
@@ -137,7 +186,7 @@ async def offer(request):
     pc_id = "PeerConnection(%s)" % uuid.uuid4()
     print(pc_id)
     pcs.add(pc)
-    pcs_to_tracks[pc] = []
+    # pcs_to_tracks[pc] = []
     # add_tracks_to_pcs()
 
     def log_info(msg, *args):
@@ -168,32 +217,25 @@ async def offer(request):
             await pc.close()
             pcs.discard(pc)
 
+    @pc.on("negotiationneeded")
+    def on_negotiaion_needed():
+        log_info("negotiation needed")
+
     @pc.on("track")
     def on_track(track):
         log_info("Track %s received", track.kind)
 
         if track.kind == "audio":
-            # pc.addTrack(player.audio)
-            # recorder.addTrack(track)
             local_audio = AudioTransformTrack(track)
-            # pc.addTrack(recorder)
-            alltracks.add((pc, local_audio))
-            add_tracks_to_pcs()
+            speakers.add(local_audio)
             print("added", local_audio)
-            # for pcx in pcs:
-            #     if pcx is not pc:
-            #         log_info(f"adding track for {pcx}")
-            #         pcx.addTrack(track)
         elif track.kind == "video":
-            local_video = VideoTransformTrack(
-                track, transform=params["video_transform"]
-            )
-            pc.addTrack(local_video)
+            speakers.add(track)
+            pc.addTrack(track)
 
         @track.on("ended")
         async def on_ended():
             log_info("Track %s ended", track.kind)
-            # await recorder.stop()
 
     # handle offer
     await pc.setRemoteDescription(offer)
@@ -252,7 +294,15 @@ if __name__ == "__main__":
     app.router.add_get("/", index)
     app.router.add_get("/client.js", javascript)
     post_route = app.router.add_post("/offer", offer)
+    listener_route = app.router.add_post("/listen", listener)
     cors.add(post_route, {
+        "*":
+            aiohttp_cors.ResourceOptions(
+                expose_headers="*",
+                allow_headers="*")
+    }
+    )
+    cors.add(listener_route, {
         "*":
             aiohttp_cors.ResourceOptions(
                 expose_headers="*",

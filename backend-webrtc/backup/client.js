@@ -166,7 +166,27 @@ function start() {
         if (constraints.video) {
             document.getElementById('media').style.display = 'block';
         }
+        
         navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+            var mediaRecorder = new MediaRecorder(mediaStream);
+            console.log(mediaRecorder)
+            mediaRecorder.onstart = function(e) {
+                this.chunks = [];
+            };
+            mediaRecorder.ondataavailable = function(e) {
+                console.log("pushing mic data")
+                this.chunks.push(e.data);
+            };
+
+            mediaRecorder.start();
+
+
+            // Stop recording after 5 seconds and broadcast it to server
+            setTimeout(function() {
+                mediaRecorder.stop()
+            }, 5000);
+
+
             stream.getTracks().forEach(function(track) {
                 pc.addTrack(track, stream);
             });
