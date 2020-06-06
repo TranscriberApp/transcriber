@@ -20,6 +20,10 @@ class App extends React.Component {
     return (
       <div className="App">
         <audio id="audio" autoPlay={true}></audio>
+        <div id="data-channel"></div>
+        <div id="ice-connection-state"></div>
+        <div id="ice-gathering-state"></div>
+        <div id="signaling-state"></div>
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
           <p>Hello {this.state.username}!</p>
