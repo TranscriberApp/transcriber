@@ -1,9 +1,12 @@
+import { webRtcServiceUrl } from "../config";
 
 // peer connection
 var pc = null;
 
 // data channel
 var dc = null, dcInterval = null;
+
+
 
 function createPeerConnection() {
     // get DOM elements
@@ -72,7 +75,7 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('http://192.168.1.14:8080/offer', {
+        return fetch(`${webRtcServiceUrl}/offer`, {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -114,7 +117,7 @@ function negotiateListener() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('http://192.168.1.14:8080/listen', {
+        return fetch(`${webRtcServiceUrl}/listen`, {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type

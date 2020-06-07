@@ -13,9 +13,12 @@ import { connect } from "react-redux";
 import { EnterMeetingContainer } from "./components/meetings/EnterMeetingComponent";
 import Particles from "react-particles-js";
 import Particler from "./Particler";
+import { websocketServiceUrl } from "./config";
+
+
 
 class MainComponent extends React.Component {
-  socket = new WebSocket("ws://192.168.1.14:8080/ws");
+  socket = new WebSocket(`${websocketServiceUrl}/ws`);
   constructor(props) {
     super(props);
   }
