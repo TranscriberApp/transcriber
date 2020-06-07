@@ -72,7 +72,7 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('https://transcriber.eu-gb.cf.appdomain.cloud/offer', {
+        return fetch('http://192.168.1.14:8080/offer', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -114,7 +114,7 @@ function negotiateListener() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('https://transcriber.eu-gb.cf.appdomain.cloud/listen', {
+        return fetch('http://192.168.1.14:8080/listen', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type

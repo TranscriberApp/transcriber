@@ -26,5 +26,5 @@ class WebSocketService {
 }
 
 export const webSocketService = new WebSocketService(
-  "wss://transcriber.eu-gb.cf.appdomain.cloud/ws"
+  "ws://192.168.1.14:8080/ws"
 );
