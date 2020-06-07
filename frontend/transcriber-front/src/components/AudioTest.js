@@ -72,7 +72,7 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('https://cert-self-service.web.cern.ch/offer', {
+        return fetch('https://transcriber.eu-gb.cf.appdomain.cloud/offer', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -114,7 +114,7 @@ function negotiateListener() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('https://cert-self-service.web.cern.ch/listen', {
+        return fetch('https://transcriber.eu-gb.cf.appdomain.cloud/listen', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type

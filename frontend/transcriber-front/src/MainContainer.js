@@ -15,7 +15,7 @@ import Particles from "react-particles-js";
 import Particler from "./Particler";
 
 class MainComponent extends React.Component {
-  socket = new WebSocket("wss://cert-self-service.web.cern.ch/ws");
+  socket = new WebSocket("wss://transcriber.eu-gb.cf.appdomain.cloud/ws");
   constructor(props) {
     super(props);
   }
