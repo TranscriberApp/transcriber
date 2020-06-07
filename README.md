@@ -4,8 +4,8 @@ Live transcription and web conferencing service based on WebRTC, Websockets and 
 
 ## Authors
 
-- Kamil Faber
 - Karolina Cynk
+- Kamil Faber
 - Cristian Schuszter
 
 ## Projects
@@ -23,7 +23,7 @@ This is the backend (and server for the frontend) of the application, built with
 
 - webrtc server where peers connect to a meeting and receive a live audio and video stream from the presentation
 - additional hooks for sending sound samples to the transcription service (in increments of 5 seconds)
-- webhooks for 
+- webhooks for real time chat and meeting membership status functionality
 
 
 #### Frontends
@@ -61,3 +61,11 @@ After building the UI like above, you can cd to `backend-webrtc`, change the `ma
 
 
 ![](main.png)
+
+---
+
+![](chatex.png)
+
+### Architecture
+
+![](diagram.png)
