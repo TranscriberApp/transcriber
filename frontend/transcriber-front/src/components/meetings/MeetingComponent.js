@@ -1,11 +1,15 @@
 import React from "react";
 import { TranscriptComponent } from "../transcript/TranscriptComponent";
 import { ParticipantsComponent } from "../participants/ParticipantsComponent";
-import { Col, Row } from "antd";
+import { Col, Row, Button } from "antd";
 import { AudioComponent } from "../audio/AudioComponent";
 import { connect } from "react-redux";
 import { ChatContainer } from "../chat/ChatComponent";
 import "./MeetingComponent.css";
+import { rtcConnectionService } from "../../services/RTCConnectionService";
+import { List } from "antd/lib/form/Form";
+import Text from "antd/lib/typography/Text";
+import { Segment } from "semantic-ui-react";
 
 class MeetingComponent extends React.Component {
   constructor(props) {
@@ -20,10 +24,22 @@ class MeetingComponent extends React.Component {
           </Col>
         </Row>
         <Row>
-          <div id="media" style={{ display: "none" }}>
-            <audio id="audio" autoPlay={true}></audio>
-            <video id="video" autoPlay={true} playsInline={true}></video>
-          </div>
+          <Col span={8}>
+            <div id="media" style={{ display: "inline-block" }}>
+              <audio id="audio" autoPlay={true}></audio>
+              <Text strong className={"header-text"}>
+                Presenter video
+              </Text>
+              <Segment basic>
+                <video
+                  style={{ borderRadius: "15px" }}
+                  id="video"
+                  autoPlay={true}
+                  playsInline={true}
+                ></video>
+              </Segment>
+            </div>
+          </Col>
         </Row>
         <Row>
           <Col span={16}>
@@ -42,6 +58,14 @@ class MeetingComponent extends React.Component {
               sendMessage={this.props.sendMessage}
             />
           </Col>
+          <Col span={24}>
+            <AudioComponent isHost={this.props.isHost} />
+          </Col>
+          <Col span={24}>
+            <Button onClick={() => rtcConnectionService.initConnection()}>
+              Retry connection
+            </Button>
+          </Col>
         </Row>
       </div>
     );
@@ -55,6 +79,19 @@ const mapStateToProps = (state) => {
     participants: state.participants,
     isHost: state.isHost,
     messages: state.messages,
+  };
+};
+const mapDispatchToProps = (dispatch) => {
+  return {
+    updateParticipantsList: (participants) =>
+      dispatch({ type: "SET_PARTICIPANTS_LIST", participants: participants }),
+    receivedMessage: (msg) => dispatch({ type: "RECEIVED_MESSAGE", msg: msg }),
+    sendMessage: (msg, author) => {
+      console.log("Send " + msg.toString());
+      this.socket.send(
+        JSON.stringify({ type: "add-message", msg: msg, author: author })
+      );
+    },
   };
 };
 

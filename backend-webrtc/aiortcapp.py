@@ -11,7 +11,12 @@ import aiohttp
 import aiohttp_cors
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
-from aiortc.contrib.media import MediaPlayer
+from aiortc.contrib.media import MediaBlackhole, MediaPlayer
+from datetime import datetime, timedelta
+from threading import Thread
+import av
+import requests
+from io import BytesIO
 
 
 ROOT = os.path.dirname(__file__)
@@ -24,6 +29,12 @@ alltracks = set()
 pcs = set()
 meetings = dict()
 buffer = BytesIO()
+
+use_transcriber = os.getenv('USE_TRANSCRIBER', 0)
+
+# On IBM Cloud Cloud Foundry, get the port number from the environment variable PORT
+# When running this app on the local machine, default the port to 8000
+port = int(os.getenv('PORT', 8080))
 
 
 # def convert_wav_to_ogg(wav_file, filename):
@@ -81,16 +92,20 @@ class AudioTransformTrack(MediaStreamTrack):
 
     async def recv(self):
         frame = await self.track.recv()
+
+        # logger.info(f"Got a new frame!!!! {frame}")
+        try:
+            if use_transcriber:
+                await self.encode_to_container(frame)
+        except Exception as e:
+            logging.exception("Exception parsing frame")
+
         return frame
 
+
 async def index(request):
-    content = open(os.path.join(ROOT, "backup", "index.html"), "r").read()
+    content = open(os.path.join(ROOT, "build", "index.html"), "r").read()
     return web.Response(content_type="text/html", text=content)
-
-
-async def javascript(request):
-    content = open(os.path.join(ROOT, "backup", "client.js"), "r").read()
-    return web.Response(content_type="application/javascript", text=content)
 
 
 async def listener(request):
@@ -156,6 +171,10 @@ async def offer(request):
 
     log_info("Created for %s", request.remote)
 
+    # prepare local media
+    # player = MediaPlayer(os.path.join(ROOT, "demo-instruct.wav"))
+    recorder = MediaBlackhole()
+
     @pc.on("datachannel")
     def on_datachannel(channel):
         @channel.on("message")
@@ -194,6 +213,7 @@ async def offer(request):
 
     # handle offer
     await pc.setRemoteDescription(offer)
+    await recorder.start()
 
     # send answer
     answer = await pc.createAnswer()
@@ -237,27 +257,32 @@ class WebSocket(web.View):
                     if data['type'] == 'create-meeting':
                         meeting_name = data['meetingName']
                         if meeting_name in app['meetings'].keys():
-                            app['meetings'][meeting_name]['participants'].append(data['username'])
+                            app['meetings'][meeting_name]['participants'].append(
+                                data['username'])
                             app['meetings'][meeting_name]['host'] = data['username']
                         else:
                             app['meetings'][meeting_name] = {
                                 'host': data['username'],
                                 'participants': [data['username']],
                             }
-                        msg = json.dumps({'type': 'participants-list', 'participants': participant_list(meeting_name)})
+                        msg = json.dumps(
+                            {'type': 'participants-list', 'participants': participant_list(meeting_name)})
                         await ws.send_str(msg)
                     elif data['type'] == 'join-meeting':
                         meeting_name = data['meetingName']
 
                         if meeting_name in app['meetings'].keys():
-                            app['meetings'][meeting_name]['participants'].append(data['username'])
+                            app['meetings'][meeting_name]['participants'].append(
+                                data['username'])
                         else:
                             app['meetings'][meeting_name] = {
                                 'host': [data['username']],
                                 'participants': [data['username']],
                             }
-                        msg = json.dumps({'type': 'participants-list', 'participants': participant_list(meeting_name)})
-                        await ws.send_str(msg)
+                        msg = json.dumps(
+                            {'type': 'participants-list', 'participants': participant_list(meeting_name)})
+                        for _ws in self.request.app['websockets']:
+                            await _ws.send_str(msg)
                     elif data['type'] == 'send-message':
                         # Broadcast to everyone
                         data['type'] = "add-message"
@@ -274,18 +299,28 @@ class WebSocket(web.View):
         return ws
 
 
+def add_cors_routes(routes, cors):
+    for route in routes:
+        cors.add(route, {
+            "*":
+            aiohttp_cors.ResourceOptions(
+                expose_headers="*",
+                allow_headers="*")
+        })
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="WebRTC audio / video"
     )
-    parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
-    parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
+    # parser.add_argument("--cert-file", help="SSL certificate file (for HTTPS)")
+    # parser.add_argument("--key-file", help="SSL key file (for HTTPS)")
     parser.add_argument(
         "--host", default="0.0.0.0", help="Host for HTTP server (default: 0.0.0.0)"
     )
-    parser.add_argument(
-        "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
-    )
+    # parser.add_argument(
+    #     "--port", type=int, default=8080, help="Port for HTTP server (default: 8080)"
+    # )
     parser.add_argument("--verbose", "-v", action="count")
     args = parser.parse_args()
 
@@ -293,12 +328,6 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
-
-    if args.cert_file:
-        ssl_context = ssl.SSLContext()
-        ssl_context.load_cert_chain(args.cert_file, args.key_file)
-    else:
-        ssl_context = None
 
     app = web.Application()
     app['websockets'] = weakref.WeakSet()
@@ -308,24 +337,15 @@ if __name__ == "__main__":
 
     app.on_shutdown.append(on_shutdown)
 
+    static_route = app.router.add_static(
+        '/static/', path='./build/static/', name='static')
+    app.router.add_get("/", index)
+
     post_route = app.router.add_post("/offer", offer)
     app.router.add_route('GET', '/ws', WebSocket)
     listener_route = app.router.add_post("/listen", listener)
-    cors.add(post_route, {
-        "*":
-            aiohttp_cors.ResourceOptions(
-                expose_headers="*",
-                allow_headers="*")
-    }
-    )
-    cors.add(listener_route, {
-        "*":
-            aiohttp_cors.ResourceOptions(
-                expose_headers="*",
-                allow_headers="*")
-    }
-    )
+    add_cors_routes([static_route, post_route, listener_route], cors)
 
     web.run_app(
-        app, access_log=None, host=args.host, port=args.port, ssl_context=ssl_context
+        app, access_log=None, host=args.host, port=port
     )

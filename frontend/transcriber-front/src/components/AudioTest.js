@@ -13,7 +13,8 @@ function createPeerConnection() {
     // signalingLog = document.getElementById('signaling-state');
 
     var config = {
-        sdpSemantics: 'unified-plan'
+        sdpSemantics: 'unified-plan',
+        iceServers: [{urls: ['stun:stun.l.google.com:19302']}]
     };
 
     pc = new RTCPeerConnection(config);
@@ -71,7 +72,7 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('http://192.168.1.14:8080/offer', {
+        return fetch('https://transcriber.eu-gb.cf.appdomain.cloud/offer', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -113,7 +114,7 @@ function negotiateListener() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('http://192.168.1.14:8080/listen', {
+        return fetch('https://transcriber.eu-gb.cf.appdomain.cloud/listen', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
