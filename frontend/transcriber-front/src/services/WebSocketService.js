@@ -26,5 +26,5 @@ class WebSocketService {
 }
 
 export const webSocketService = new WebSocketService(
-  "wss://transcriber.eu-gb.cf.appdomain.cloud/ws"
+  "wss://cert-self-service.web.cern.ch/ws"
 );
