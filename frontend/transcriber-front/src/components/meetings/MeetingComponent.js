@@ -9,7 +9,7 @@ import "./MeetingComponent.css";
 import { rtcConnectionService } from "../../services/RTCConnectionService";
 import { List } from "antd/lib/form/Form";
 import Text from "antd/lib/typography/Text";
-import { Segment } from "semantic-ui-react";
+import { Segment, Header } from "semantic-ui-react";
 
 class MeetingComponent extends React.Component {
   constructor(props) {
@@ -20,7 +20,7 @@ class MeetingComponent extends React.Component {
       <div className={"meeting-container"}>
         <Row>
           <Col span={24}>
-            <h2>Meeting name: {this.props.meeting}</h2>
+            <Header as="h2">Meeting: {this.props.meeting}</Header>
           </Col>
         </Row>
         <Row>

@@ -72,7 +72,7 @@ function negotiate() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('https://cert-self-service.web.cern.ch/offer', {
+        return fetch('http://192.168.1.14:8080/offer', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type
@@ -114,7 +114,7 @@ function negotiateListener() {
     }).then(function() {
         var offer = pc.localDescription;
         
-        return fetch('https://cert-self-service.web.cern.ch/listen', {
+        return fetch('http://192.168.1.14:8080/listen', {
             body: JSON.stringify({
                 sdp: offer.sdp,
                 type: offer.type

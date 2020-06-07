@@ -7,15 +7,15 @@ import { LoginContainer } from "./components/login/LoginComponent";
 import "antd/dist/antd.css";
 
 import { MeetingContainer } from "./components/meetings/MeetingComponent";
-import { Segment, Container } from "semantic-ui-react";
-import { Button } from "antd";
+import { Segment, Container, Header, Icon } from "semantic-ui-react";
+import { Button, Divider } from "antd";
 import { connect } from "react-redux";
 import { EnterMeetingContainer } from "./components/meetings/EnterMeetingComponent";
 import Particles from "react-particles-js";
 import Particler from "./Particler";
 
 class MainComponent extends React.Component {
-  socket = new WebSocket("wss://cert-self-service.web.cern.ch/ws");
+  socket = new WebSocket("ws://192.168.1.14:8080/ws");
   constructor(props) {
     super(props);
   }
@@ -44,13 +44,28 @@ class MainComponent extends React.Component {
         {!(this.props.meeting && this.props.username) && <Particler />}
         <div className="App">
           <div className="App-header">
+            {!this.props.username && (
+              <>
+                <Header as="h1" icon>
+                  <Icon name="tty" />
+                  Transcriber
+                  <Header.Subheader>
+                    Connect your webinar-style meetings with our live
+                    transcription service
+                  </Header.Subheader>
+                </Header>
+                <Divider />
+              </>
+            )}
             {this.props.username && !this.props.meeting && (
-              <p>Hello {this.props.username}!</p>
+              <>
+                <Header as="h2">Hello {this.props.username}!</Header>
+                <Divider />
+              </>
             )}
             {!this.props.username && (
               <>
-                <p>Hello Stranger!</p>
-                <p>What is your name?</p>
+                <p>Please identify yourself below!</p>
               </>
             )}
             {!this.props.username && <LoginContainer />}
