@@ -1,0 +1,6 @@
+---
+applications:
+ - name: transcriber
+   random-route: true
+   buildpack: https://github.com/cloudfoundry/python-buildpack
+   memory: 1.7G

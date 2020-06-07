@@ -5,6 +5,7 @@ class RTCConnectionService {
     constructor() {
         this.rtcConnection = new RTCPeerConnection({
             sdpSemantics: "unified-plan",
+            iceServers: [{urls: ['stun:stun.l.google.com:19302']}]
         });
         this.initConnection = this.initConnection.bind(this);
 

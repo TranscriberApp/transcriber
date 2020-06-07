@@ -1,10 +1,13 @@
 image: python:3.8-slim
 variables:
   REAL_APP_NAME: dl-transcript-backend
+  WEBRTC_APP: webrtc-backend
   LISTENER_APP_NAME: listener-app
   NAMESPACE_DEV:  jitsi
+  NAMESPACE_DEV_RTC: cert-self-service
   DEV_TAG: dev
   DEV_LISTENER_TAG: devrmq
+  DEV_WEBRTC_TAG: devwebrtc
   OPENSHIFT_SERVER_PROD: https://openshift.cern.ch
 
 
@@ -28,6 +31,20 @@ stages:
     # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
     - /kaniko/executor --context ${CI_PROJECT_DIR}/backend --dockerfile ${DFILE} --destination ${TO}
 
+.docker_build_template_rtc: &docker_definition_rtc
+    stage: build_docker
+    image:
+      # We recommend using the CERN version of the Kaniko image: gitlab-registry.cern.ch/ci-tools/docker-image-builder
+      name: gitlab-registry.cern.ch/ci-tools/docker-image-builder
+      entrypoint: [""]
+    script:
+      # Prepare Kaniko configuration file
+      - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+      # Build and push the image from the Dockerfile at the root of the project.
+      # To push to a specific docker tag, amend the --destination parameter, e.g. --destination $CI_REGISTRY_IMAGE:$CI_BUILD_REF_NAME
+      # See https://docs.gitlab.com/ee/ci/variables/predefined_variables.html#variables-reference for available variables
+      - /kaniko/executor --context ${CI_PROJECT_DIR} --dockerfile ${DFILE} --destination ${TO}
+  
 .deploy_template: &deploy_definition
   stage: deploy
   image: gitlab-registry.cern.ch/paas-tools/openshift-client:latest
@@ -49,6 +66,14 @@ build_docker_dev_listener:
   <<: *docker_definition
   variables:
       DFILE: ${CI_PROJECT_DIR}/backend/Dockerfile.listener
+      TO: ${CI_REGISTRY_IMAGE}:${DEV_LISTENER_TAG}
+
+  
+### Docker build definitions webrtc
+build_docker_dev_listener:
+  <<: *docker_definition_rtc
+  variables:
+      DFILE: ${CI_PROJECT_DIR}/Dockerfile.webrtc
       TO: ${CI_REGISTRY_IMAGE}:${DEV_LISTENER_TAG}
 
   
@@ -76,3 +101,15 @@ deploy_dev_listener:
     NAMESPACE: ${NAMESPACE_DEV}
     TAG: ${DEV_LISTENER_TAG}
     ROUTE_HOSTNAME: https://${NAMESPACE_DEV}.web.cern.ch
+
+deploy_dev_webrtc:
+  <<: *deploy_definition
+  variables:
+    ENVIRONMENT: dev
+    APP_NAME: ${WEBRTC_APP}
+    OPENSHIFT_SERVER: ${OPENSHIFT_SERVER_PROD}
+    TOKEN: ${OPENSHIFT_TOKEN_RTC}
+    NAMESPACE: ${NAMESPACE_DEV_RTC}
+    TAG: ${DEV_WEBRTC_TAG}
+    ROUTE_HOSTNAME: https://${NAMESPACE_DEV_RTC}.web.cern.ch
+    
