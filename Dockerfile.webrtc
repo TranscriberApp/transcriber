@@ -8,6 +8,8 @@ WORKDIR /build
 RUN apt update && apt install -y nodejs npm 
 RUN npm i -g yarn
 
+RUN /bin/sh -c ./build-frontend.sh
+
 WORKDIR /build/backend-webrtc
 
 RUN pip install -r requirements.txt
