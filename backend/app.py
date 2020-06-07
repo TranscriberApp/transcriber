@@ -6,33 +6,32 @@ import logging
 import os
 import pathlib
 import wave
+from datetime import datetime
 from io import BytesIO, StringIO
 from threading import Thread
 
 import pika
 from cloudant import Cloudant
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, abort, send_file
 from flask.blueprints import Blueprint
 from flask_sockets import Sockets
 from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
-from backend.dl_model.ogg_to_wav import convert
+from backend.dl_model.ogg_to_wav import convert, convert_wav_to_ogg
 from backend.dl_model.recording import deep_learning_model
-from backend.messaging.rmq import Connecter
+from backend.messaging.cloud_db import ibm_db
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s", level=logging.INFO)
 
 load_dotenv()
 
-conn = Connecter()
 db = None
 urls = Blueprint("urls", "urls", "static")
 ws = Blueprint('ws', __name__)
 
-
-client = None
 
 sockets = Sockets()
 sockets.all_conns = []
@@ -57,38 +56,34 @@ def root():
 # */
 
 
-@urls.route('/api/visitors', methods=['GET'])
-def get_visitor():
-    if client:
-        return jsonify(list(map(lambda doc: doc['name'], db)))
-    else:
-        logging.warning('No database')
-        return jsonify([])
-
-# /**
-#  * Endpoint to get a JSON array of all the visitors in the database
-#  * REST API example:
-#  * <code>
-#  * GET http://localhost:8000/api/visitors
-#  * </code>
-#  *
-#  * Response:
-#  * [ "Bob", "Jane" ]
-#  * @return An array of all the visitor names
-#  */
+@urls.route('/api/files', methods=['GET'])
+def get_uploads():
+    return jsonify(list(map(lambda doc: ibm_db.deblob_doc(doc), ibm_db.db)))
 
 
-@urls.route('/api/visitors', methods=['POST'])
-def put_visitor():
-    user = request.json['name']
-    data = {'name': user}
-    if client:
-        my_document = db.create_document(data)
-        data['_id'] = my_document['_id']
-        return jsonify(data)
-    else:
-        logging.info('No database')
-        return jsonify(data)
+@urls.route('/api/files', methods=['DELETE'])
+def delete_uploads():
+    for f in ibm_db.db:
+        f.delete()
+    return jsonify({"deleted": True})
+
+
+@urls.route("/api/files/<file_id>/attachment", methods=['GET'])
+def download_attachment(file_id):
+    extracted_file = ibm_db.db.get(file_id)
+    if not extracted_file:
+        abort(400, {"message": "Not found!"})
+    blob = ibm_db.parse_blob(extracted_file)
+    result_filename = f"{extracted_file['filename']}.{extracted_file['extension']}"
+    return send_file(BytesIO(blob), as_attachment=True, attachment_filename=result_filename)
+
+
+@urls.route("/api/files/<file_id>", methods=['GET'])
+def get_file_by_id(file_id):
+    extracted_file = ibm_db.db.get(file_id)
+    if not extracted_file:
+        abort(400, {"message": "Not found!"})
+    return jsonify(ibm_db.deblob_doc(extracted_file))
 
 
 @urls.route('/upload', methods=['GET', 'POST'])
@@ -99,13 +94,27 @@ def uploader():
         f = request.files['file']
         username = request.form.get('username', 'anonymous')
         buffer = f.read()
-        extension = f.filename.split(".")[1]
 
-        conn.produce(f'hello-{extension}', buffer, {"username": username})
+        split_file = os.path.splitext(f.filename)
+        extension = split_file[1][1:]
+        file_no_extension = split_file[0]
+        if extension not in ["wav", "ogg"]:
+            abort(400, {"message": "Only wav or ogg are allowed"})
+        data = {
+            "username": username,
+            "timestamp": str(datetime.now()),
+            "filename": file_no_extension,
+            "extension": extension,
+            "processed": False
+        }
+
         sample = buffer
-        if extension == "ogg":
-            sample = convert(BytesIO(sample))
-        return jsonify({"message": "processing..."})
+        if extension == "wav":
+            sample = convert_wav_to_ogg(BytesIO(buffer)).read()
+            data["extension"] = "ogg"
+        saved = ibm_db.store_blob(data, sample)
+        # saved.pop('blob', None)
+        return jsonify({"doc": saved})
 
 
 @ws.route('/transcript')
@@ -117,12 +126,6 @@ def transcript_socket(socket):
         message = socket.receive()
         logging.info(f"Received: {message}")
         socket.send(message)
-
-
-@atexit.register
-def shutdown():
-    if client:
-        client.disconnect()
 
 
 def callback_results(ch, method, properties, body):
@@ -145,13 +148,6 @@ def callback_results(ch, method, properties, body):
             pass
 
 
-def results_thread(app):
-    logging.info('Listening for result transcript messages')
-    results_conn = Connecter()
-    results_conn.init_app(app)
-    results_conn.listen('results', callback_results)
-
-
 def create_app():
 
     app = Flask(__name__, static_url_path='')
@@ -161,53 +157,30 @@ def create_app():
     # Init the deep learning model
     # deep_learning_model.init_app(app)
     # Init the RMQ connection
-    conn.init_app(app)
+    # conn.init_app(app)
     sockets.init_app(app)
-
-    conn.define_queue("hello-wav")
-    conn.define_queue("hello-ogg")
+    ibm_db.init_app(app)
 
     sockets.register_blueprint(ws)
     app.register_blueprint(urls)
-
-    db_name = 'mydb'
-
-    if 'VCAP_SERVICES' in os.environ:
-        vcap = json.loads(os.getenv('VCAP_SERVICES'))
-        print('Found VCAP_SERVICES')
-        if 'cloudantNoSQLDB' in vcap:
-            creds = vcap['cloudantNoSQLDB'][0]['credentials']
-            user = creds['username']
-            password = creds['password']
-            url = 'https://' + creds['host']
-            client = Cloudant(user, password, url=url, connect=True)
-            db = client.create_database(db_name, throw_on_exists=False)
-    elif "CLOUDANT_URL" in os.environ:
-        client = Cloudant(os.environ['CLOUDANT_USERNAME'], os.environ['CLOUDANT_PASSWORD'],
-                          url=os.environ['CLOUDANT_URL'], connect=True)
-        db = client.create_database(db_name, throw_on_exists=False)
-    elif os.path.isfile('vcap-local.json'):
-        with open('vcap-local.json') as f:
-            vcap = json.load(f)
-            print('Found local VCAP_SERVICES')
-            creds = vcap['services']['cloudantNoSQLDB'][0]['credentials']
-            user = creds['username']
-            password = creds['password']
-            url = 'https://' + creds['host']
-            client = Cloudant(user, password, url=url, connect=True)
-            db = client.create_database(db_name, throw_on_exists=False)
 
     return app
 
 
 app = create_app()
-results_thread = Thread(target=results_thread, args=(app,), daemon=True)
-results_thread.start()
+# results_thread = Thread(target=results_thread, args=(app,), daemon=True)
+# results_thread.start()
+
+server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
+
+
+@atexit.register
+def stop_server():
+    if server:
+        server.stop()
 
 
 # if __name__ == '__main__':
 #     app.run(host='0.0.0.0', port=port, debug=True)
 if __name__ == "__main__":
-    from geventwebsocket.handler import WebSocketHandler
-    server = pywsgi.WSGIServer(('', port), app, handler_class=WebSocketHandler)
     server.serve_forever()

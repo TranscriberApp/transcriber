@@ -8,8 +8,6 @@ default_dl_path = str((pathlib.Path(__file__).parent / "static" /
 class Config:
     DL_MODEL_PATH = os.getenv("DL_MODEL_PATH", default_dl_path)
     DL_SCORER_PATH = os.getenv("DL_SCORER_PATH", None)
-    RMQ_USER = os.getenv("RMQ_USER")
-    RMQ_PASS = os.getenv("RMQ_PASS")
-    RMQ_HOST = os.getenv("RMQ_HOST", "localhost")
-    RMQ_VHOST = os.getenv("RMQ_VHOST")
+    CLOUDANT_USER = os.getenv('CLOUDANT_USER')
+    CLOUDANT_APIKEY = os.getenv('CLOUDANT_APIKEY')
     DEBUG = True
