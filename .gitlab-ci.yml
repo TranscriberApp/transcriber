@@ -70,7 +70,7 @@ build_docker_dev_listener:
 
   
 ### Docker build definitions webrtc
-build_docker_dev_listener:
+build_docker_dev_rtc:
   <<: *docker_definition_rtc
   variables:
       DFILE: ${CI_PROJECT_DIR}/Dockerfile.webrtc
