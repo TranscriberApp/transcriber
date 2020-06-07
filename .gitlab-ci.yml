@@ -74,7 +74,7 @@ build_docker_dev_rtc:
   <<: *docker_definition_rtc
   variables:
       DFILE: ${CI_PROJECT_DIR}/Dockerfile.webrtc
-      TO: ${CI_REGISTRY_IMAGE}:${DEV_LISTENER_TAG}
+      TO: ${CI_REGISTRY_IMAGE}:${DEV_WEBRTC_TAG}
 
   
 
