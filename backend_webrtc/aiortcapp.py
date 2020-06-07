@@ -6,26 +6,33 @@ import os
 import ssl
 import uuid
 import weakref
+from datetime import datetime, timedelta
+from io import BytesIO
+from threading import Thread
 
 import aiohttp
 import aiohttp_cors
+import av
+import requests
 from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer
-from datetime import datetime, timedelta
-from threading import Thread
-import av
-import requests
-from io import BytesIO
+from pydub import AudioSegment
+
+
+def convert(ogg_file):
+    return AudioSegment.from_ogg(ogg_file).export(format="wav", bitrate="16k", parameters=["-ar", "16000"])
+
+
+def convert_wav_to_ogg(wav_file):
+    return AudioSegment.from_wav(wav_file).export(format="ogg")
+
 
 
 ROOT = os.path.dirname(__file__)
 
 logger = logging.getLogger("pc")
-speakers = set()
-speakers_video = set()
-listeners = set()
-alltracks = set()
+speakers = dict()
 pcs = set()
 meetings = dict()
 buffer = BytesIO()
@@ -37,17 +44,13 @@ use_transcriber = os.getenv('USE_TRANSCRIBER', 0)
 port = int(os.getenv('PORT', 8080))
 
 
-# def convert_wav_to_ogg(wav_file, filename):
-#     return AudioSegment.from_wav(wav_file).export(filename, format="ogg")
+STATIC_PATH = os.path.join(ROOT, "build/static/")
 
-
-def call_external_translator(filename):
-    logging.info(f"Calling transcripts with: {filename}")
-    # convert_wav_to_ogg(open(filename, "rb"), oggfile)
-    requests.post("https://jitsi.web.cern.ch/upload",
-                  files={'file': ('helloworld.wav', open(filename, "rb"))})
-    dname = os.path.join(os.path.curdir, filename)
-    logging.info(f"done, removing: {dname}")
+def call_external_translator(ogg_buffer):
+    logging.info(f"Calling transcripts dir")
+    requests.post("http://localhost:5000/upload",
+                  files={'file': ('helloworld.ogg', BytesIO(ogg_buffer))})
+    logging.info("Submitted transcript")
 
 
 class AudioTransformTrack(MediaStreamTrack):
@@ -65,14 +68,18 @@ class AudioTransformTrack(MediaStreamTrack):
         self.now = datetime.now()
 
     def _init_container(self):
-        self.filename = f"test{datetime.now()}.wav"
+        self.filename = os.path.join(ROOT, f"test{datetime.now()}.wav")
         self.container = av.open(self.filename, mode="w")
         self.stream = self.container.add_stream(self.codec_name)
-        logger.info(f"added {self.track}")
+        logger.info(f"recording on track {self.track}")
 
     def send_buffer_to_encoder(self):
         # call_external_translator(self.filename)
-        Thread(target=call_external_translator, args=(self.filename, )).start()
+        # recording_buffer = open(self.filename, "rb").read()
+        ogg_buffer = convert_wav_to_ogg(open(self.filename, "rb")).read()
+        Thread(target=call_external_translator, args=(ogg_buffer, )).start()
+        logging.info(f"done, removing: {self.filename}")
+        os.unlink(self.filename)
         # t.join()
 
     async def encode_to_container(self, frame):
@@ -126,9 +133,11 @@ async def listener(request):
             await pc.close()
             pcs.discard(pc)
 
-    for speaker in speakers:
+    for speaker, tracks in speakers.items():
         log_info("adding speakers")
-        pc.addTrack(speaker)
+        if speaker and speaker.iceConnectionState != "failed":
+            for track in tracks:
+                pc.addTrack(track)
 
     @pc.on("track")
     def on_track(track):
@@ -189,6 +198,9 @@ async def offer(request):
         if pc.iceConnectionState == "failed":
             await pc.close()
             pcs.discard(pc)
+            speaker_to_remove = speakers.get(pc)
+            if speaker_to_remove:
+                speakers.pop(pc, None)
 
     @pc.on("negotiationneeded")
     def on_negotiaion_needed():
@@ -197,14 +209,15 @@ async def offer(request):
     @pc.on("track")
     def on_track(track):
         log_info("Track %s received", track.kind)
+        if pc not in speakers:
+            speakers[pc] = set()
 
         if track.kind == "audio":
             local_audio = AudioTransformTrack(track)
-            speakers.add(local_audio)
+            speakers[pc].add(local_audio)
             recorder.addTrack(local_audio)
-            print("added", local_audio)
         elif track.kind == "video":
-            speakers.add(track)
+            speakers[pc].add(track)
             pc.addTrack(track)
 
         @track.on("ended")
@@ -338,7 +351,7 @@ if __name__ == "__main__":
     app.on_shutdown.append(on_shutdown)
 
     static_route = app.router.add_static(
-        '/static/', path='./build/static/', name='static')
+        '/static/', path=STATIC_PATH, name='static')
     app.router.add_get("/", index)
 
     post_route = app.router.add_post("/offer", offer)

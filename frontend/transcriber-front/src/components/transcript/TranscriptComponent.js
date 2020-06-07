@@ -5,7 +5,7 @@ import moment from "moment";
 const { Text } = Typography;
 
 export class TranscriptComponent extends React.Component {
-  ws = new WebSocket("wss://jitsi.web.cern.ch/transcript");
+  ws = new WebSocket("ws://localhost:5000/transcript");
 
   constructor(props) {
     super(props);
