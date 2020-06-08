@@ -18,6 +18,7 @@ from aiohttp import web
 from aiortc import MediaStreamTrack, RTCPeerConnection, RTCSessionDescription
 from aiortc.contrib.media import MediaBlackhole, MediaPlayer
 from pydub import AudioSegment
+from dotenv import load_dotenv
 
 
 def convert(ogg_file):
@@ -37,7 +38,15 @@ pcs = set()
 meetings = dict()
 buffer = BytesIO()
 
-use_transcriber = os.getenv('USE_TRANSCRIBER', 0)
+
+# Make sure we have the fresh dotenv
+load_dotenv()
+
+# configs
+USE_TRANSCRIBER = bool(os.getenv('USE_TRANSCRIBER', "false") == "true")
+TRANSLATOR_ENDPOINT = str(os.getenv('TRANSLATOR_ENDPOINT', "http://localhost:5000/upload"))
+print(f"USE_TRANSCRIBER: {USE_TRANSCRIBER}")
+print(f"TRANSLATOR_ENDPOINT: {TRANSLATOR_ENDPOINT}")
 
 # On IBM Cloud Cloud Foundry, get the port number from the environment variable PORT
 # When running this app on the local machine, default the port to 8000
@@ -48,7 +57,7 @@ STATIC_PATH = os.path.join(ROOT, "build/static/")
 
 def call_external_translator(ogg_buffer):
     logging.info(f"Calling transcripts dir")
-    requests.post("http://localhost:5000/upload",
+    requests.post(TRANSLATOR_ENDPOINT,
                   files={'file': ('helloworld.ogg', BytesIO(ogg_buffer))})
     logging.info("Submitted transcript")
 
@@ -102,7 +111,7 @@ class AudioTransformTrack(MediaStreamTrack):
 
         # logger.info(f"Got a new frame!!!! {frame}")
         try:
-            if use_transcriber:
+            if USE_TRANSCRIBER:
                 await self.encode_to_container(frame)
         except Exception as e:
             logging.exception("Exception parsing frame")
@@ -337,10 +346,11 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", "-v", action="count")
     args = parser.parse_args()
 
+    log_format =  "%(asctime)s %(levelname)s %(message)s"
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(format=log_format, level=logging.DEBUG)
     else:
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(format=log_format, level=logging.INFO)
 
     app = web.Application()
     app['websockets'] = weakref.WeakSet()

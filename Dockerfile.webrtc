@@ -10,7 +10,7 @@ RUN npm i -g yarn
 
 RUN /bin/sh -c ./build-frontend.sh
 
-WORKDIR /build/backend-webrtc
+WORKDIR /build/backend_webrtc
 
 RUN pip install -r requirements.txt
 
