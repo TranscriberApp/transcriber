@@ -37,7 +37,9 @@ pcs = set()
 meetings = dict()
 buffer = BytesIO()
 
-use_transcriber = os.getenv('USE_TRANSCRIBER', 0)
+# configs
+USE_TRANSCRIBER = os.getenv('USE_TRANSCRIBER', 0)
+TRANSLATOR_ENDPOINT = os.getenv('TRANSLATOR_ENDPOINT', "http://localhost:5000/upload")
 
 # On IBM Cloud Cloud Foundry, get the port number from the environment variable PORT
 # When running this app on the local machine, default the port to 8000
@@ -48,7 +50,7 @@ STATIC_PATH = os.path.join(ROOT, "build/static/")
 
 def call_external_translator(ogg_buffer):
     logging.info(f"Calling transcripts dir")
-    requests.post("http://localhost:5000/upload",
+    requests.post(TRANSLATOR_ENDPOINT,
                   files={'file': ('helloworld.ogg', BytesIO(ogg_buffer))})
     logging.info("Submitted transcript")
 
@@ -102,7 +104,7 @@ class AudioTransformTrack(MediaStreamTrack):
 
         # logger.info(f"Got a new frame!!!! {frame}")
         try:
-            if use_transcriber:
+            if USE_TRANSCRIBER:
                 await self.encode_to_container(frame)
         except Exception as e:
             logging.exception("Exception parsing frame")
