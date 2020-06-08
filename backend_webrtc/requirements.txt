@@ -1,5 +1,7 @@
 aiohttp
 aiohttp_cors
 aiortc
-opencv-python
 requests	
+pydub
+python-dotenv
+
