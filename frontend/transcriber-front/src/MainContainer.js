@@ -1,21 +1,16 @@
 import React from "react";
-import logo from "./logo.svg";
 import "./App.css";
 import "./components/audio/AudioComponent";
-import { rtcConnectionService } from "./services/RTCConnectionService";
 import { LoginContainer } from "./components/login/LoginComponent";
 import "antd/dist/antd.css";
 
 import { MeetingContainer } from "./components/meetings/MeetingComponent";
-import { Segment, Container, Header, Icon } from "semantic-ui-react";
-import { Button, Divider } from "antd";
+import { Header, Icon, Image } from "semantic-ui-react";
+import { Divider } from "antd";
 import { connect } from "react-redux";
 import { EnterMeetingContainer } from "./components/meetings/EnterMeetingComponent";
-import Particles from "react-particles-js";
 import Particler from "./Particler";
 import { websocketServiceUrl } from "./config";
-
-
 
 class MainComponent extends React.Component {
   socket = new WebSocket(`${websocketServiceUrl}/ws`);
@@ -75,6 +70,7 @@ class MainComponent extends React.Component {
             {this.props.username && !this.props.meeting && (
               <EnterMeetingContainer socket={this.socket} />
             )}
+            <Image src="logo-govtech.png" size="small" centered />
           </div>
           {this.props.username && this.props.meeting && (
             <div className="main-container">

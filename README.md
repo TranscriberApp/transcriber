@@ -1,5 +1,8 @@
 # Transcriber
 
+<img src="./img/logo-govtech.png" alt="Govtech"
+	title="Govtech Polska" width="300" height="140" />
+
 Live transcription and web conferencing service based on WebRTC, Websockets and using DeepSpeech as a Speech-to-Text engine. Built for the HackYeah Summer 2020 hackathon.
 
 ## Authors
